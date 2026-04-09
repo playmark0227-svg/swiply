@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 
@@ -59,45 +60,51 @@ export default function Home() {
   return (
     <div className="min-h-dvh bg-white pb-20">
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-violet-600 via-fuchsia-500 to-pink-500 px-6 pt-14 pb-16 text-white">
-        {/* decorative circles */}
-        <div className="absolute -top-12 -right-12 w-48 h-48 rounded-full bg-white/10" />
-        <div className="absolute top-24 -left-8 w-32 h-32 rounded-full bg-white/10" />
+      <section className="relative overflow-hidden" style={{ minHeight: "520px" }}>
+        {/* cover photo */}
+        <Image
+          src="/cover.png"
+          alt="様々な職種で働く人たち"
+          fill
+          priority
+          className="object-cover object-top"
+        />
+        {/* gradient overlay — bottom-heavy so text at bottom is readable */}
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/40 to-transparent" />
 
-        <div className="relative max-w-lg mx-auto">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <span className="text-white text-lg font-black">S</span>
-            </div>
-            <span className="text-xl font-black tracking-widest">SWIPLY</span>
+        {/* Logo top-left */}
+        <div className="absolute top-5 left-5 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <span className="text-white text-sm font-black">S</span>
           </div>
+          <span className="text-white text-base font-black tracking-widest drop-shadow">SWIPLY</span>
+        </div>
 
-          <p className="text-white/80 text-xs font-semibold tracking-widest uppercase mb-3">
+        {/* Text content at bottom */}
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8">
+          <p className="text-white/70 text-[10px] font-bold tracking-widest uppercase mb-2">
             Japan&apos;s #1 Swipe Job Platform
           </p>
-          <h1 className="text-3xl font-black leading-tight mb-4">
-            求人を<br />
-            <span className="text-yellow-300">&quot;探す&quot;</span>から<br />
+          <h1 className="text-[28px] font-black leading-tight text-white mb-2 drop-shadow-lg">
+            求人を<span className="text-yellow-300">&quot;探す&quot;</span>から<br />
             <span className="text-yellow-300">&quot;出会う&quot;</span>へ。
           </h1>
-          <p className="text-white/80 text-sm leading-relaxed mb-8">
-            スワイプするだけで、あなたにぴったりの仕事が見つかる。
+          <p className="text-white/75 text-xs leading-relaxed mb-6">
+            スワイプするだけで、あなたにぴったりの仕事が見つかる。<br />
             履歴書不要・最短当日応募。
           </p>
-
-          <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
             <Link
               href="/baito"
-              className="block w-full py-4 bg-white text-violet-600 text-center font-black rounded-2xl text-sm shadow-xl shadow-black/20 active:scale-[0.97] transition-transform"
+              className="flex-1 py-3.5 bg-white text-violet-700 text-center font-black rounded-2xl text-sm shadow-xl shadow-black/30 active:scale-[0.97] transition-transform"
             >
-              アルバイトを探す →
+              アルバイト
             </Link>
             <Link
               href="/career"
-              className="block w-full py-4 bg-white/15 backdrop-blur-sm border border-white/30 text-white text-center font-bold rounded-2xl text-sm active:scale-[0.97] transition-transform"
+              className="flex-1 py-3.5 bg-violet-600/80 backdrop-blur-sm border border-violet-400/40 text-white text-center font-bold rounded-2xl text-sm active:scale-[0.97] transition-transform"
             >
-              正社員を探す →
+              正社員
             </Link>
           </div>
         </div>
