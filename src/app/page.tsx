@@ -56,6 +56,8 @@ const voices = [
   },
 ];
 
+const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
+
 export default function Home() {
   return (
     <div className="min-h-dvh bg-white pb-20">
@@ -63,7 +65,7 @@ export default function Home() {
       <section className="relative overflow-hidden" style={{ minHeight: "520px" }}>
         {/* cover photo */}
         <Image
-          src="/cover.png"
+          src={`${BASE_PATH}/cover.png`}
           alt="様々な職種で働く人たち"
           fill
           priority
