@@ -1,13 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import JobListCard from "@/components/JobListCard";
-import { getJobsByType } from "@/data/jobs";
+import { getJobsByType } from "@/lib/services/jobs";
+import type { Job } from "@/types/job";
 
 export default function BaitoPage() {
-  const jobs = getJobsByType("baito");
+  const [jobs, setJobs] = useState<Job[]>([]);
+
+  useEffect(() => {
+    getJobsByType("baito").then(setJobs);
+  }, []);
 
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50/50">

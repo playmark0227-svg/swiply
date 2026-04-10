@@ -5,21 +5,22 @@ import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { getLikedJobIds, removeLike } from "@/lib/likes";
-import { jobs } from "@/data/jobs";
+import { getLikedJobIds, removeLike } from "@/lib/services/likes";
+import { getAllJobs } from "@/lib/services/jobs";
 import { Job } from "@/types/job";
 
 export default function LikesPage() {
   const [likedJobs, setLikedJobs] = useState<Job[]>([]);
 
   useEffect(() => {
-    const likedIds = getLikedJobIds();
-    const matched = jobs.filter((job) => likedIds.includes(job.id));
-    setLikedJobs(matched);
+    (async () => {
+      const [likedIds, allJobs] = await Promise.all([getLikedJobIds(), getAllJobs()]);
+      setLikedJobs(allJobs.filter((job) => likedIds.includes(job.id)));
+    })();
   }, []);
 
-  function handleRemove(jobId: string) {
-    removeLike(jobId);
+  async function handleRemove(jobId: string) {
+    await removeLike(jobId);
     setLikedJobs((prev) => prev.filter((job) => job.id !== jobId));
   }
 

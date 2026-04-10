@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
 import { Job } from "@/types/job";
-import { addLike } from "@/lib/likes";
+import { addLike } from "@/lib/services/likes";
 
 interface SwipeDeckProps {
   jobs: Job[];

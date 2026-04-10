@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
-import { getProfile, saveProfile } from "@/lib/profile";
+import { getProfile, saveProfile } from "@/lib/services/profile";
 import { UserProfile, defaultProfile } from "@/types/profile";
 
 const HOBBY_OPTIONS = [
@@ -27,7 +27,7 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setProfile(getProfile());
+    getProfile().then(setProfile);
   }, []);
 
   function handleChange(field: keyof UserProfile, value: string) {
@@ -55,8 +55,8 @@ export default function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  function handleSave() {
-    saveProfile(profile);
+  async function handleSave() {
+    await saveProfile(profile);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

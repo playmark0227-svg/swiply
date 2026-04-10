@@ -1,11 +1,17 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import SwipeDeck from "@/components/SwipeDeck";
-import { getJobsByType } from "@/data/jobs";
+import { getJobsByType } from "@/lib/services/jobs";
+import type { Job } from "@/types/job";
 
 export default function CareerSwipePage() {
-  const jobs = getJobsByType("career");
+  const [jobs, setJobs] = useState<Job[]>([]);
+
+  useEffect(() => {
+    getJobsByType("career").then(setJobs);
+  }, []);
 
   return (
     <div className="swipe-page flex flex-col h-dvh bg-gray-50">

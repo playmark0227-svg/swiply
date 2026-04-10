@@ -1,8 +1,8 @@
-import { jobs } from "@/data/jobs";
+import { getAllJobIds } from "@/lib/services/jobs";
 import ClientJobDetailPage from "./ClientJobDetailPage";
 
 export function generateStaticParams() {
-  return jobs.map((job) => ({ id: job.id }));
+  return getAllJobIds().map((id) => ({ id }));
 }
 
 export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {

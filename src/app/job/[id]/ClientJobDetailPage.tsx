@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { getJobById } from "@/data/jobs";
-import { addLike, isLiked, removeLike } from "@/lib/likes";
+import { getJobById } from "@/lib/services/jobs";
+import { addLike, isLiked, removeLike } from "@/lib/services/likes";
 import { Job } from "@/types/job";
 
 export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
@@ -13,11 +13,13 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
   const [liked, setLiked] = useState(false);
 
   useEffect(() => {
-    const found = getJobById(jobId);
-    if (found) {
-      setJob(found);
-      setLiked(isLiked(jobId));
-    }
+    (async () => {
+      const found = await getJobById(jobId);
+      if (found) {
+        setJob(found);
+        setLiked(await isLiked(jobId));
+      }
+    })();
   }, [jobId]);
 
   if (!job) {
@@ -28,14 +30,14 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
     );
   }
 
-  function toggleLike() {
+  async function toggleLike() {
     if (!job) return;
     if (liked) {
-      removeLike(job.id);
       setLiked(false);
+      await removeLike(job.id);
     } else {
-      addLike(job.id);
       setLiked(true);
+      await addLike(job.id);
     }
   }
 
