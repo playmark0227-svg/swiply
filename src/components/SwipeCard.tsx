@@ -21,7 +21,7 @@ export default function SwipeCard({
 }: SwipeCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 0, 300], [-20, 0, 20]);
+  const rotate = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
   const opacity = useTransform(
     x,
     [-300, -100, 0, 100, 300],
@@ -57,30 +57,36 @@ export default function SwipeCard({
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0.9}
       onDragEnd={handleDragEnd}
-      whileTap={{ scale: 1.02 }}
+      whileTap={{ scale: 1.01 }}
     >
       {/* LIKE indicator */}
       <motion.div
-        className="absolute top-8 left-6 z-20 rounded-lg border-4 border-green-500 px-4 py-2 -rotate-12"
+        className="absolute top-10 left-6 z-20 -rotate-12"
         style={{ opacity: likeOpacity }}
       >
-        <span className="text-3xl font-black text-green-500">LIKE</span>
+        <div className="bg-emerald-500 rounded-xl px-5 py-2 shadow-lg shadow-emerald-500/30">
+          <span className="text-2xl font-black text-white tracking-wide">LIKE</span>
+        </div>
       </motion.div>
 
       {/* NOPE indicator */}
       <motion.div
-        className="absolute top-8 right-6 z-20 rounded-lg border-4 border-red-500 px-4 py-2 rotate-12"
+        className="absolute top-10 right-6 z-20 rotate-12"
         style={{ opacity: nopeOpacity }}
       >
-        <span className="text-3xl font-black text-red-500">NOPE</span>
+        <div className="bg-red-500 rounded-xl px-5 py-2 shadow-lg shadow-red-500/30">
+          <span className="text-2xl font-black text-white tracking-wide">NOPE</span>
+        </div>
       </motion.div>
 
       {/* Detail indicator */}
       <motion.div
-        className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 rounded-lg border-4 border-blue-500 px-4 py-2"
+        className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20"
         style={{ opacity: detailOpacity }}
       >
-        <span className="text-xl font-black text-blue-500">DETAIL</span>
+        <div className="bg-blue-500 rounded-xl px-5 py-2 shadow-lg shadow-blue-500/30">
+          <span className="text-lg font-black text-white tracking-wide">DETAIL ↑</span>
+        </div>
       </motion.div>
 
       {children}

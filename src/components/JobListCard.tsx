@@ -10,60 +10,57 @@ interface JobListCardProps {
 
 export default function JobListCard({ job }: JobListCardProps) {
   return (
-    <Link href={`/job/${job.id}`} className="block">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition-shadow active:scale-[0.99]">
+    <Link href={`/job/${job.id}`} className="block group">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/80 group-hover:shadow-md transition-all group-active:scale-[0.98]">
         {/* Image */}
-        <div className="relative h-36">
+        <div className="relative aspect-[4/3]">
           <Image
             src={job.image}
             alt={job.company}
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 350px"
+            sizes="(max-width: 768px) 50vw, 200px"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+
           {/* Badge */}
-          <div className="absolute top-2.5 left-2.5">
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-gray-900">
+          <div className="absolute top-2 left-2">
+            <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-white/90 backdrop-blur-sm text-gray-800 shadow-sm">
               {job.employmentType}
             </span>
           </div>
+
           {/* Salary overlay */}
-          <div className="absolute bottom-2.5 left-2.5">
-            <span className="text-sm font-bold text-emerald-300">{job.salary}</span>
+          <div className="absolute bottom-2 left-2 right-2">
+            <span className="text-[13px] font-extrabold text-white drop-shadow">
+              {job.salary}
+            </span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-3">
-          <h3 className="text-sm font-extrabold text-gray-900 leading-tight">{job.title}</h3>
-          <p className="text-[11px] text-gray-400 mt-0.5">{job.company}</p>
+        <div className="px-2.5 py-2.5">
+          <h3 className="text-[13px] font-extrabold text-gray-900 leading-snug line-clamp-1">
+            {job.title}
+          </h3>
+          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{job.company}</p>
 
-          {/* Info row */}
-          <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-400">
-            <span className="flex items-center gap-0.5">
-              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              </svg>
-              {job.location}
-            </span>
-            <span>{job.minDays}</span>
-          </div>
-
-          {/* Experience */}
-          <div className="mt-1.5 flex items-center gap-1">
-            <svg className="w-2.5 h-2.5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          {/* Info */}
+          <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+            <svg className="w-3 h-3 shrink-0 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             </svg>
-            <span className="text-[10px] font-medium text-sky-600">{job.experience}</span>
+            <span className="truncate">{job.location}</span>
+            <span className="text-gray-200">|</span>
+            <span className="shrink-0">{job.minDays}</span>
           </div>
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mt-2">
-            {job.tags.slice(0, 3).map((tag) => (
+            {job.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 rounded-full bg-gray-50 text-[10px] font-medium text-gray-500"
+                className="px-1.5 py-0.5 rounded-md bg-violet-50 text-[9px] font-semibold text-violet-500"
               >
                 {tag}
               </span>
