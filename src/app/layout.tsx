@@ -9,9 +9,9 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Warp - スワイプで出会う求人",
+  title: "Warp - 求人がある企業にWarpする。",
   description:
-    "求人を探すから出会うへ。スワイプで直感的に求人を選べるマッチングサービス。",
+    "スワイプひとつで、会いたい企業まで最短距離。履歴書も長文応募も要らない、新しい求人の探し方。",
 };
 
 export const viewport: Viewport = {

@@ -39,16 +39,16 @@ export default function Home() {
             — a new way to find your next job.
           </p>
           <h1 className="text-[30px] font-black leading-[1.15] text-white mb-3 drop-shadow-lg">
-            履歴書の前に、<br />
+            求人がある企業に<br />
             <span className="relative inline-block">
-              <span className="relative z-10">スワイプ</span>
+              <span className="relative z-10">Warp</span>
               <span className="absolute inset-x-0 bottom-1 h-3 bg-yellow-300/80 -z-0"></span>
             </span>
-            でいい。
+            する。
           </h1>
           <p className="text-white/80 text-[13px] leading-relaxed mb-6 max-w-[22rem]">
-            気になるかどうか、最初の1秒で決めていいと思う。<br />
-            1万件以上の求人を、アプリみたいにめくって探せる場所。
+            スワイプひとつで、会いたい企業まで最短距離。<br />
+            履歴書も、長文応募も、要らない。
           </p>
           <div className="flex gap-2.5">
             <Link
@@ -298,9 +298,9 @@ export default function Home() {
       <section className="px-6 py-12 max-w-lg mx-auto text-center">
         <p className="text-[11px] text-gray-400 mb-3">よかったら、はじめてみてください。</p>
         <h2 className="text-[22px] font-black text-gray-900 leading-tight mb-6">
-          次の仕事、<br />
+          気になる企業に、<br />
           <span className="underline decoration-yellow-300 decoration-4 underline-offset-2">
-            めくって決めよう
+            Warp しよう
           </span>
           。
         </h2>
