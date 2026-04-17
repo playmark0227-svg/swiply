@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="min-h-dvh bg-[#fbf8f3] pb-20">
       {/* ── Hero ── */}
-      <section className="relative overflow-hidden" style={{ minHeight: "540px" }}>
+      <section className="relative overflow-hidden min-h-[540px] md:min-h-[640px] lg:min-h-[720px]">
         <Image
           src={`${BASE_PATH}/cover.png`}
           alt="働く人たち"
@@ -18,77 +18,80 @@ export default function Home() {
           priority
           className="object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/92 via-gray-950/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-gray-950/92 via-gray-950/35 to-transparent md:bg-gradient-to-r md:from-gray-950/92 md:via-gray-950/50 md:to-transparent" />
 
-        {/* Logo top-left */}
-        <div className="absolute top-5 left-5 flex items-center gap-2">
+        {/* Logo top-left (mobile only — desktop uses Header) */}
+        <div className="absolute top-5 left-5 md:hidden flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
             <span className="text-white text-sm font-black">W</span>
           </div>
           <span className="text-white text-base font-black tracking-widest drop-shadow">Warp</span>
         </div>
 
-        {/* top-right tiny badge */}
-        <div className="absolute top-6 right-5">
-          <span className="text-[10px] text-white/60 font-medium">est. 2024 — Tokyo</span>
+        <div className="absolute top-6 right-5 md:top-8 md:right-8">
+          <span className="text-[10px] md:text-xs text-white/60 font-medium tracking-wider">est. 2024 — Tokyo</span>
         </div>
 
-        {/* Text content at bottom */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 pb-9">
-          <p className="text-white/60 text-[10px] font-medium mb-3 italic">
-            — a new way to find your next job.
-          </p>
-          <h1 className="text-[30px] font-black leading-[1.15] text-white mb-3 drop-shadow-lg">
-            求人がある企業に<br />
-            <span className="relative inline-block">
-              <span className="relative z-10">Warp</span>
-              <span className="absolute inset-x-0 bottom-1 h-3 bg-yellow-300/80 -z-0"></span>
-            </span>
-            する。
-          </h1>
-          <p className="text-white/80 text-[13px] leading-relaxed mb-6 max-w-[22rem]">
-            スワイプひとつで、会いたい企業まで最短距離。<br />
-            履歴書も、長文応募も、要らない。
-          </p>
-          <div className="flex gap-2.5">
-            <Link
-              href="/swipe"
-              className="flex-1 py-3.5 bg-white text-gray-900 text-center font-black rounded-2xl text-sm shadow-xl shadow-black/30 active:scale-[0.97] transition-transform"
-            >
-              スワイプをはじめる →
-            </Link>
-          </div>
-          <div className="flex gap-4 mt-3 text-[11px] text-white/60">
-            <Link href="/baito" className="underline underline-offset-4">バイトを見る</Link>
-            <Link href="/career" className="underline underline-offset-4">正社員を見る</Link>
+        {/* Text content */}
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-9 md:px-12 md:pb-16 lg:px-20 lg:pb-24">
+          <div className="max-w-7xl mx-auto">
+            <div className="max-w-[640px]">
+              <p className="text-white/60 text-[10px] md:text-xs font-medium mb-3 italic tracking-wide">
+                — a new way to find your next job.
+              </p>
+              <h1 className="text-[30px] md:text-[52px] lg:text-[68px] font-black leading-[1.15] md:leading-[1.05] text-white mb-3 md:mb-5 drop-shadow-lg">
+                求人がある企業に<br />
+                <span className="relative inline-block">
+                  <span className="relative z-10">Warp</span>
+                  <span className="absolute inset-x-0 bottom-1 md:bottom-2 h-3 md:h-5 bg-yellow-300/80 -z-0"></span>
+                </span>
+                する。
+              </h1>
+              <p className="text-white/80 text-[13px] md:text-base leading-relaxed mb-6 md:mb-8 max-w-[22rem] md:max-w-[32rem]">
+                スワイプひとつで、会いたい企業まで最短距離。<br />
+                履歴書も、長文応募も、要らない。
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2.5 md:gap-3 md:max-w-md">
+                <Link
+                  href="/swipe"
+                  className="flex-1 py-3.5 md:py-4 px-6 bg-white text-gray-900 text-center font-black rounded-2xl text-sm md:text-base shadow-xl shadow-black/30 active:scale-[0.97] hover:scale-[1.02] transition-transform"
+                >
+                  スワイプをはじめる →
+                </Link>
+              </div>
+              <div className="flex gap-4 md:gap-6 mt-3 md:mt-5 text-[11px] md:text-sm text-white/60">
+                <Link href="/baito" className="underline underline-offset-4 hover:text-white transition">バイトを見る</Link>
+                <Link href="/career" className="underline underline-offset-4 hover:text-white transition">正社員を見る</Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Quick stats strip (asymmetric) ── */}
+      {/* ── Quick stats strip ── */}
       <section className="border-y border-gray-900/10 bg-white">
-        <div className="max-w-lg mx-auto px-5 py-5 flex items-center justify-between">
+        <div className="max-w-lg md:max-w-5xl mx-auto px-5 md:px-8 py-5 md:py-8 flex items-center justify-between">
           <div>
-            <p className="text-[22px] font-black text-gray-900 leading-none">12,347</p>
-            <p className="text-[10px] text-gray-500 mt-1">いま掲載中の求人</p>
+            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">12,347</p>
+            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">いま掲載中の求人</p>
           </div>
-          <div className="h-10 w-px bg-gray-200" />
+          <div className="h-10 md:h-14 w-px bg-gray-200" />
           <div>
-            <p className="text-[22px] font-black text-gray-900 leading-none">98,421</p>
-            <p className="text-[10px] text-gray-500 mt-1">登録者</p>
+            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">98,421</p>
+            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">登録者</p>
           </div>
-          <div className="h-10 w-px bg-gray-200" />
+          <div className="h-10 md:h-14 w-px bg-gray-200" />
           <div>
-            <p className="text-[22px] font-black text-gray-900 leading-none">
-              87.3<span className="text-sm">%</span>
+            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">
+              87.3<span className="text-sm md:text-xl">%</span>
             </p>
-            <p className="text-[10px] text-gray-500 mt-1">満足度</p>
+            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">満足度</p>
           </div>
         </div>
       </section>
 
       {/* ── Founder's note ── */}
-      <section className="px-6 pt-10 pb-6 max-w-lg mx-auto">
+      <section className="px-6 pt-10 pb-6 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
         <p className="text-[11px] text-gray-400 mb-3">— はじめに、少しだけ。</p>
         <p className="text-[15px] text-gray-800 leading-[1.9] font-medium">
           正直、<span className="bg-yellow-100 px-1">就活サイトってどれも似てる</span>と思ってた。
@@ -114,15 +117,15 @@ export default function Home() {
       </section>
 
       {/* ── Divider with ornament ── */}
-      <div className="flex items-center gap-3 max-w-lg mx-auto px-8 py-4">
+      <div className="flex items-center gap-3 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto px-8 py-4">
         <div className="flex-1 h-px bg-gray-300/60" />
         <span className="text-gray-400 text-xs">✦</span>
         <div className="flex-1 h-px bg-gray-300/60" />
       </div>
 
       {/* ── Why swipe (text-heavy, no emoji cards) ── */}
-      <section className="px-6 py-8 max-w-lg mx-auto">
-        <h2 className="text-[22px] font-black text-gray-900 leading-tight mb-6">
+      <section className="px-6 py-8 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
+        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 leading-tight mb-6">
           スワイプ式の、<br />
           ちょっと真面目な話。
         </h2>
@@ -171,9 +174,9 @@ export default function Home() {
 
       {/* ── Dark product photo section ── */}
       <section className="bg-gray-950 text-white my-6">
-        <div className="max-w-lg mx-auto px-6 py-10">
+        <div className="max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto px-6 py-10">
           <p className="text-[10px] tracking-[0.3em] text-violet-300 font-bold mb-3">HOW IT WORKS</p>
-          <h2 className="text-[22px] font-black leading-tight mb-8">
+          <h2 className="text-[22px] md:text-[34px] font-black leading-tight mb-8">
             3分で、はじめられる。
           </h2>
 
@@ -223,9 +226,9 @@ export default function Home() {
       </section>
 
       {/* ── Voices: magazine-style, asymmetric ── */}
-      <section className="px-6 py-10 max-w-lg mx-auto">
+      <section className="px-6 py-10 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
         <p className="text-[11px] text-gray-400 mb-1">使ってくれた人たち</p>
-        <h2 className="text-[22px] font-black text-gray-900 mb-6">
+        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 mb-6">
           実際、どうだったか。
         </h2>
 
@@ -270,7 +273,7 @@ export default function Home() {
       </section>
 
       {/* ── FAQ-ish small text section ── */}
-      <section className="px-6 py-8 max-w-lg mx-auto bg-white border-y border-gray-900/5">
+      <section className="px-6 py-8 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto bg-white border-y border-gray-900/5">
         <p className="text-[11px] text-gray-400 mb-4">よく聞かれること</p>
         <dl className="space-y-4 text-[13px]">
           <div>
@@ -295,9 +298,9 @@ export default function Home() {
       </section>
 
       {/* ── Final CTA: quiet, not shouty ── */}
-      <section className="px-6 py-12 max-w-lg mx-auto text-center">
+      <section className="px-6 py-12 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto text-center">
         <p className="text-[11px] text-gray-400 mb-3">よかったら、はじめてみてください。</p>
-        <h2 className="text-[22px] font-black text-gray-900 leading-tight mb-6">
+        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 leading-tight mb-6">
           気になる企業に、<br />
           <span className="underline decoration-yellow-300 decoration-4 underline-offset-2">
             Warp しよう

@@ -34,11 +34,11 @@ export default function LikesPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-4 pb-20">
-        <div className="mb-4">
-          <h1 className="text-lg font-extrabold text-gray-900">LIKE した求人</h1>
+      <main className="flex-1 max-w-lg md:max-w-3xl lg:max-w-5xl mx-auto w-full px-4 md:px-6 pt-4 md:pt-8 pb-20 md:pb-12">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">LIKE した求人</h1>
           {likedJobs.length > 0 && (
-            <p className="text-[11px] text-gray-400 mt-0.5">
+            <p className="text-[11px] md:text-xs text-gray-400 mt-0.5">
               {likedJobs.length}件の求人が保存されています
             </p>
           )}
@@ -63,11 +63,11 @@ export default function LikesPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
             {likedJobs.map((job) => (
               <div
                 key={job.id}
-                className="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden"
+                className="bg-white rounded-2xl shadow-sm border border-gray-100/80 overflow-hidden hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
               >
                 <div className="flex">
                   <Link href={`/job/${job.id}`} className="shrink-0">

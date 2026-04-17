@@ -66,8 +66,8 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-4 pb-20">
-        <h1 className="text-lg font-extrabold text-gray-900 mb-4">お知らせ</h1>
+      <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20 md:pb-16">
+        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-4 md:mb-6">お知らせ</h1>
 
         <div className="space-y-2">
           {notifications.map((n) => (

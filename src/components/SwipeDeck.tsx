@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import SwipeCard from "./SwipeCard";
@@ -71,6 +71,66 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
     setCurrentIndex(last.index);
     toast.show("1つ戻しました", "info");
   }, [history, jobs, toast]);
+
+  // Keyboard shortcuts (desktop). Ignore when typing in inputs.
+  useEffect(() => {
+    function isEditable(el: EventTarget | null) {
+      if (!(el instanceof HTMLElement)) return false;
+      const tag = el.tagName;
+      return (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        el.isContentEditable
+      );
+    }
+    function onKey(e: KeyboardEvent) {
+      if (isEditable(e.target)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (currentIndex >= jobs.length) return;
+      switch (e.key) {
+        case "ArrowRight":
+        case "d":
+        case "D":
+          e.preventDefault();
+          handleSwipeRight();
+          break;
+        case "ArrowLeft":
+        case "a":
+        case "A":
+          e.preventDefault();
+          handleSwipeLeft();
+          break;
+        case "ArrowUp":
+        case "w":
+        case "W":
+        case "Enter":
+          e.preventDefault();
+          handleSwipeUp();
+          break;
+        case " ":
+          e.preventDefault();
+          handleSwipeRight();
+          break;
+        case "z":
+        case "Z":
+        case "Backspace":
+        case "ArrowDown":
+          e.preventDefault();
+          handleUndo();
+          break;
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [
+    currentIndex,
+    jobs.length,
+    handleSwipeRight,
+    handleSwipeLeft,
+    handleSwipeUp,
+    handleUndo,
+  ]);
 
   if (currentIndex >= jobs.length) {
     return (

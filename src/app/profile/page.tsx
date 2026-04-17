@@ -69,8 +69,8 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50/50">
       <Header />
-      <main className="flex-1 max-w-lg mx-auto w-full px-4 pt-5 pb-32">
-        <h1 className="text-lg font-extrabold text-gray-900 mb-5">プロフィール</h1>
+      <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-5 md:pt-10 pb-32 md:pb-28">
+        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-5 md:mb-7">プロフィール</h1>
 
         {/* Photo section */}
         <div className="flex flex-col items-center mb-6">
@@ -298,8 +298,8 @@ export default function ProfilePage() {
       </main>
 
       {/* Save button - above bottom nav */}
-      <div className="fixed bottom-14 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/50 px-5 py-2.5">
-        <div className="max-w-lg mx-auto">
+      <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/50 px-5 py-2.5 md:py-3">
+        <div className="max-w-lg md:max-w-3xl mx-auto">
           <button
             onClick={handleSave}
             className={`w-full h-11 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] ${

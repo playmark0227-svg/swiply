@@ -81,7 +81,7 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
   return (
     <div className="min-h-dvh bg-gray-50">
       {/* Hero image */}
-      <div className="relative h-72 bg-gray-200">
+      <div className="relative h-72 md:h-[420px] bg-gray-200">
         <Image
           src={job.image}
           alt={job.company}
@@ -125,20 +125,24 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
         </div>
 
         {/* Title overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-          <p className="text-xs font-semibold text-amber-300 mb-1">
-            {job.catchphrase}
-          </p>
-          <h1 className="text-2xl font-extrabold leading-tight">{job.title}</h1>
-          <p className="text-sm text-white/70 font-medium mt-0.5">{job.company}</p>
+        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-10 text-white">
+          <div className="max-w-5xl mx-auto">
+            <p className="text-xs md:text-sm font-semibold text-amber-300 mb-1">
+              {job.catchphrase}
+            </p>
+            <h1 className="text-2xl md:text-4xl font-extrabold leading-tight">{job.title}</h1>
+            <p className="text-sm md:text-base text-white/70 font-medium mt-0.5 md:mt-1">{job.company}</p>
+          </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-lg mx-auto -mt-1 rounded-t-3xl bg-white relative z-10">
-        <div className="px-5 pt-5 pb-28 space-y-5">
+      <div className="max-w-lg md:max-w-5xl mx-auto -mt-1 rounded-t-3xl bg-white relative z-10">
+        <div className="px-5 md:px-10 pt-5 md:pt-8 pb-28 md:pb-32 space-y-5 md:space-y-0 md:grid md:grid-cols-[1fr_320px] md:gap-10">
+        {/* Primary column */}
+        <div className="space-y-5 md:space-y-8 min-w-0">
           {/* Key info */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
             <InfoCard
               icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />}
               label="給与"
@@ -210,10 +214,64 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
             </div>
           </section>
         </div>
+
+        {/* Desktop sticky sidebar */}
+        <aside className="hidden md:block">
+          <div className="sticky top-24 space-y-4">
+            <div className="rounded-2xl border border-gray-100 bg-white shadow-sm p-5">
+              <p className="text-[11px] text-gray-400 font-medium mb-1">給与</p>
+              <p className="text-xl font-black text-emerald-600 mb-4">{job.salary}</p>
+              <div className="space-y-2 text-sm">
+                <SidebarRow label="勤務地" value={job.location} />
+                <SidebarRow label="勤務時間" value={job.workHours} />
+                <SidebarRow label="勤務日数" value={job.minDays} />
+                <SidebarRow label="アクセス" value={job.access} />
+              </div>
+              <button
+                onClick={() => {
+                  haptic("success");
+                  toast.show("応募フォームは準備中です", "info");
+                }}
+                className="mt-5 w-full h-11 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-200/50 active:scale-[0.98] hover:shadow-xl hover:shadow-violet-300/60 transition-all"
+              >
+                応募する
+              </button>
+              <div className="mt-3 flex gap-2">
+                <button
+                  onClick={toggleLike}
+                  aria-label={liked ? "LIKEを取り消す" : "LIKE"}
+                  className={`flex-1 h-10 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition ${
+                    liked
+                      ? "bg-pink-50 text-pink-600 border border-pink-200"
+                      : "bg-gray-50 text-gray-600 border border-gray-200 hover:bg-pink-50 hover:text-pink-500 hover:border-pink-200"
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                  {liked ? "LIKE済み" : "LIKE"}
+                </button>
+                <button
+                  onClick={handleShare}
+                  aria-label="共有"
+                  className="w-10 h-10 rounded-xl bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 flex items-center justify-center transition"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4m0 0L8 6m4-4v12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-400 text-center">
+              キーボードの ← → でも LIKE/スキップ できます
+            </p>
+          </div>
+        </aside>
+        </div>
       </div>
 
-      {/* Fixed bottom bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100/50 px-5 py-3 z-50">
+      {/* Mobile-only fixed bottom bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100/50 px-5 py-3 z-50">
         <div className="max-w-lg mx-auto flex gap-3">
           <button
             onClick={toggleLike}
@@ -294,14 +352,23 @@ function InfoCard({ icon, label, value, highlight }: {
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl p-3 ${highlight ? "bg-emerald-50/80 border border-emerald-100" : "bg-gray-50/80 border border-gray-100"}`}>
+    <div className={`rounded-2xl p-3 md:p-4 ${highlight ? "bg-emerald-50/80 border border-emerald-100" : "bg-gray-50/80 border border-gray-100"}`}>
       <div className="flex items-center gap-1.5 mb-1">
-        <svg className={`w-3 h-3 ${highlight ? "text-emerald-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className={`w-3 h-3 md:w-4 md:h-4 ${highlight ? "text-emerald-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           {icon}
         </svg>
-        <p className="text-[10px] text-gray-400 font-medium">{label}</p>
+        <p className="text-[10px] md:text-[11px] text-gray-400 font-medium">{label}</p>
       </div>
-      <p className={`text-xs font-bold leading-snug ${highlight ? "text-emerald-700" : "text-gray-800"}`}>{value}</p>
+      <p className={`text-xs md:text-sm font-bold leading-snug ${highlight ? "text-emerald-700" : "text-gray-800"}`}>{value}</p>
+    </div>
+  );
+}
+
+function SidebarRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between items-start gap-3 py-1 border-b border-gray-100 last:border-0">
+      <span className="text-[11px] text-gray-400 font-medium shrink-0">{label}</span>
+      <span className="text-[12px] font-semibold text-gray-800 text-right">{value}</span>
     </div>
   );
 }

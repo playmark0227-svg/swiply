@@ -11,7 +11,7 @@ interface JobListCardProps {
 export default function JobListCard({ job }: JobListCardProps) {
   return (
     <Link href={`/job/${job.id}`} className="block group">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/80 group-hover:shadow-md transition-all group-active:scale-[0.98]">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/80 group-hover:shadow-xl group-hover:shadow-gray-200/60 group-hover:border-violet-100 group-hover:-translate-y-1 transition-all duration-200 group-active:scale-[0.98]">
         {/* Image */}
         <div className="relative aspect-[4/3]">
           <Image
