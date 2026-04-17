@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
+import { haptic } from "@/lib/haptic";
 
 const tabs = [
   {
@@ -82,12 +84,13 @@ export default function BottomNav() {
         {tabs.map((tab) => {
           const active = isActive(tab);
 
-          /* ── Center swipe button ── */
           if ("center" in tab && tab.center) {
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
+                onClick={() => haptic("tick")}
+                aria-label={tab.label}
                 className="flex flex-col items-center flex-1 -mt-4"
               >
                 <div
@@ -108,17 +111,26 @@ export default function BottomNav() {
             );
           }
 
-          /* ── Regular tab ── */
           return (
             <Link
               key={tab.href}
               href={tab.href}
+              onClick={() => haptic("tick")}
+              aria-label={tab.label}
+              aria-current={active ? "page" : undefined}
               className={`relative flex flex-col items-center justify-center flex-1 h-full transition-colors ${
                 active ? "text-violet-600" : "text-gray-400"
               }`}
             >
-              {active ? tab.activeIcon : tab.inactiveIcon}
-              <span className={`text-[10px] mt-1 leading-none ${active ? "font-bold" : "font-medium"}`}>
+              {active && (
+                <motion.span
+                  layoutId="bottom-nav-pill"
+                  className="absolute top-1.5 h-8 w-12 rounded-xl bg-violet-50"
+                  transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                />
+              )}
+              <span className="relative">{active ? tab.activeIcon : tab.inactiveIcon}</span>
+              <span className={`relative text-[10px] mt-1 leading-none ${active ? "font-bold" : "font-medium"}`}>
                 {tab.label}
               </span>
             </Link>

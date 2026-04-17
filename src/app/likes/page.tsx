@@ -8,10 +8,13 @@ import BottomNav from "@/components/BottomNav";
 import { getLikedJobIds, removeLike } from "@/lib/services/likes";
 import { getAllJobs } from "@/lib/services/jobs";
 import { Job } from "@/types/job";
+import { useToast } from "@/components/Toast";
+import { haptic } from "@/lib/haptic";
 
 export default function LikesPage() {
   const [likedJobs, setLikedJobs] = useState<Job[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     (async () => {
@@ -22,8 +25,10 @@ export default function LikesPage() {
   }, []);
 
   async function handleRemove(jobId: string) {
+    haptic("soft");
     await removeLike(jobId);
     setLikedJobs((prev) => prev.filter((job) => job.id !== jobId));
+    toast.show("LIKEを取り消しました", "info");
   }
 
   return (

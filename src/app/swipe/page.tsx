@@ -25,10 +25,10 @@ export default function SwipePage() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-1.5">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-              <span className="text-white text-[10px] font-black">S</span>
+              <span className="text-white text-[10px] font-black">W</span>
             </div>
             <span className="text-base font-black tracking-tight text-gray-900">
-              SWIPLY
+              Warp
             </span>
           </Link>
 

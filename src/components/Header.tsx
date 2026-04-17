@@ -1,32 +1,79 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { haptic } from "@/lib/haptic";
+
+/**
+ * Top-level pages (reachable via BottomNav / logo) show the Warp logo.
+ * Any other page shows a back button in place of the logo.
+ */
+const ROOT_PAGES = new Set<string>([
+  "/",
+  "/baito",
+  "/career",
+  "/swipe",
+  "/profile",
+  "/likes",
+  "/notifications",
+]);
+
+const PAGE_TITLE: Record<string, string> = {
+  "/likes": "LIKE一覧",
+  "/notifications": "お知らせ",
+  "/profile": "マイページ",
+  "/baito": "アルバイト",
+  "/career": "正社員",
+};
 
 export default function Header() {
   const pathname = usePathname();
-  const isNotifications = pathname === "/notifications";
+  const router = useRouter();
+  const isRoot = ROOT_PAGES.has(pathname);
+  const title = PAGE_TITLE[pathname];
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50">
-      <div className="max-w-lg mx-auto px-4 h-12 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-sm shadow-violet-200">
-            <span className="text-white text-xs font-black">S</span>
-          </div>
-          <span className="text-[15px] font-black tracking-tight text-gray-900">
-            SWIPLY
-          </span>
-        </Link>
+      <div className="max-w-lg mx-auto px-3 h-12 flex items-center justify-between">
+        {isRoot ? (
+          <Link href="/" className="flex items-center gap-2 px-1">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-sm shadow-violet-200">
+              <span className="text-white text-xs font-black">W</span>
+            </div>
+            <span className="text-[15px] font-black tracking-tight text-gray-900">
+              Warp
+            </span>
+            {title && (
+              <>
+                <span className="text-gray-200 text-sm">/</span>
+                <span className="text-[13px] font-semibold text-gray-500">
+                  {title}
+                </span>
+              </>
+            )}
+          </Link>
+        ) : (
+          <button
+            onClick={() => {
+              haptic("tick");
+              router.back();
+            }}
+            aria-label="戻る"
+            className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-90 transition"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+        )}
 
-        {/* Right actions */}
         <div className="flex items-center gap-0.5">
-          {/* Notifications */}
           <Link
             href="/notifications"
+            aria-label="お知らせ"
+            onClick={() => haptic("tick")}
             className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
-              isNotifications
+              pathname === "/notifications"
                 ? "text-violet-600 bg-violet-50"
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
             }`}
@@ -37,9 +84,10 @@ export default function Header() {
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
           </Link>
 
-          {/* LIKE */}
           <Link
             href="/likes"
+            aria-label="LIKEした求人"
+            onClick={() => haptic("tick")}
             className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
               pathname === "/likes"
                 ? "text-pink-500 bg-pink-50"

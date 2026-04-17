@@ -1,6 +1,6 @@
 # Firebase Integration
 
-SWIPLY's data layer is abstracted so you can swap localStorage for Firebase
+Warp's data layer is abstracted so you can swap localStorage for Firebase
 without touching any UI code. By default, the app runs in localStorage-only
 mode. Setting Firebase env vars activates Firestore + Anonymous Auth.
 

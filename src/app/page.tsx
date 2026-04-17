@@ -23,9 +23,9 @@ export default function Home() {
         {/* Logo top-left */}
         <div className="absolute top-5 left-5 flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <span className="text-white text-sm font-black">S</span>
+            <span className="text-white text-sm font-black">W</span>
           </div>
-          <span className="text-white text-base font-black tracking-widest drop-shadow">SWIPLY</span>
+          <span className="text-white text-base font-black tracking-widest drop-shadow">Warp</span>
         </div>
 
         {/* top-right tiny badge */}
@@ -108,7 +108,7 @@ export default function Home() {
             className="text-xl text-gray-600"
             style={{ fontFamily: '"Caveat", "Segoe Script", cursive' }}
           >
-            — SWIPLY 運営チーム
+            — Warp 運営チーム
           </div>
         </div>
       </section>
@@ -316,7 +316,7 @@ export default function Home() {
 
         <div className="mt-10 text-[10px] text-gray-400">
           Made with coffee in Tokyo.<br />
-          © {new Date().getFullYear()} SWIPLY
+          © {new Date().getFullYear()} Warp
         </div>
       </section>
 

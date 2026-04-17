@@ -5,6 +5,8 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { getProfile, saveProfile } from "@/lib/services/profile";
 import { UserProfile, defaultProfile } from "@/types/profile";
+import { useToast } from "@/components/Toast";
+import { haptic } from "@/lib/haptic";
 
 const HOBBY_OPTIONS = [
   "読書", "映画鑑賞", "音楽", "旅行", "料理", "スポーツ",
@@ -25,6 +27,7 @@ export default function ProfilePage() {
   const [editingHobbies, setEditingHobbies] = useState(false);
   const [editingSkills, setEditingSkills] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
 
   useEffect(() => {
     getProfile().then(setProfile);
@@ -56,8 +59,10 @@ export default function ProfilePage() {
   }
 
   async function handleSave() {
+    haptic("success");
     await saveProfile(profile);
     setSaved(true);
+    toast.show("プロフィールを保存しました", "success");
     setTimeout(() => setSaved(false), 2000);
   }
 

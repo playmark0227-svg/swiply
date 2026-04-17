@@ -3,14 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
 import { getJobById } from "@/lib/services/jobs";
 import { addLike, isLiked, removeLike } from "@/lib/services/likes";
 import { Job } from "@/types/job";
+import { useToast } from "@/components/Toast";
+import { haptic } from "@/lib/haptic";
 
 export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
   const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [liked, setLiked] = useState(false);
+  const [burst, setBurst] = useState(0);
+  const toast = useToast();
 
   useEffect(() => {
     (async () => {
@@ -34,10 +39,42 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
     if (!job) return;
     if (liked) {
       setLiked(false);
+      haptic("soft");
       await removeLike(job.id);
+      toast.show("LIKEを取り消しました", "info");
     } else {
       setLiked(true);
+      setBurst((b) => b + 1);
+      haptic("success");
       await addLike(job.id);
+      toast.show("LIKEしました", "success");
+    }
+  }
+
+  async function handleShare() {
+    if (!job) return;
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = {
+      title: `${job.title} - Warp`,
+      text: `${job.company}の求人をチェック`,
+      url,
+    };
+    haptic("tick");
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch {
+        // user cancelled — fall through to copy
+      }
+    }
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.show("リンクをコピーしました", "success");
+      } catch {
+        toast.show("共有できませんでした", "error");
+      }
     }
   }
 
@@ -57,7 +94,11 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
 
         {/* Back button */}
         <button
-          onClick={() => router.back()}
+          onClick={() => {
+            haptic("tick");
+            router.back();
+          }}
+          aria-label="戻る"
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-xl bg-black/30 backdrop-blur-md flex items-center justify-center text-white active:scale-90 transition-transform"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,8 +106,19 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
           </svg>
         </button>
 
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          aria-label="共有"
+          className="absolute top-4 right-4 z-10 w-10 h-10 rounded-xl bg-black/30 backdrop-blur-md flex items-center justify-center text-white active:scale-90 transition-transform"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4m0 0L8 6m4-4v12" />
+          </svg>
+        </button>
+
         {/* Employment type badge */}
-        <div className="absolute top-4 right-4 z-10">
+        <div className="absolute top-16 right-4 z-10">
           <span className="px-3 py-1 rounded-lg text-xs font-bold bg-white/90 backdrop-blur-sm text-gray-800 shadow-sm">
             {job.employmentType}
           </span>
@@ -120,13 +172,11 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
             />
           </div>
 
-          {/* Description */}
           <section>
             <SectionTitle>仕事内容</SectionTitle>
             <p className="text-sm text-gray-600 leading-relaxed">{job.description}</p>
           </section>
 
-          {/* Requirements */}
           <section>
             <SectionTitle>応募条件</SectionTitle>
             <div className="flex flex-wrap gap-2">
@@ -138,7 +188,6 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
             </div>
           </section>
 
-          {/* Benefits */}
           <section>
             <SectionTitle>待遇・メリット</SectionTitle>
             <div className="flex flex-wrap gap-2">
@@ -150,7 +199,6 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
             </div>
           </section>
 
-          {/* Tags */}
           <section>
             <SectionTitle>特徴タグ</SectionTitle>
             <div className="flex flex-wrap gap-2">
@@ -169,17 +217,59 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
         <div className="max-w-lg mx-auto flex gap-3">
           <button
             onClick={toggleLike}
-            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${
+            aria-label={liked ? "LIKEを取り消す" : "LIKE"}
+            className={`relative w-12 h-12 rounded-2xl flex items-center justify-center transition-all active:scale-90 ${
               liked
                 ? "bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-200/50"
                 : "bg-gray-100 text-gray-400 hover:text-pink-400"
             }`}
           >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+            {/* Heart burst particles */}
+            <AnimatePresence>
+              {burst > 0 && (
+                <motion.span
+                  key={burst}
+                  className="absolute inset-0 pointer-events-none"
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: 0 }}
+                  transition={{ duration: 0.8 }}
+                >
+                  {[0, 1, 2, 3, 4, 5].map((i) => {
+                    const angle = (i / 6) * Math.PI * 2;
+                    const dx = Math.cos(angle) * 28;
+                    const dy = Math.sin(angle) * 28;
+                    return (
+                      <motion.span
+                        key={i}
+                        className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full bg-pink-400"
+                        initial={{ x: -3, y: -3, opacity: 1, scale: 0.5 }}
+                        animate={{ x: dx - 3, y: dy - 3, opacity: 0, scale: 1 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                    );
+                  })}
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <motion.svg
+              key={liked ? "on" : "off"}
+              className="w-5 h-5 relative"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              initial={{ scale: liked ? 0.6 : 1 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 15 }}
+            >
               <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
+            </motion.svg>
           </button>
-          <button className="flex-1 h-12 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-200/50 active:scale-[0.98] transition-all">
+          <button
+            onClick={() => {
+              haptic("success");
+              toast.show("応募フォームは準備中です", "info");
+            }}
+            className="flex-1 h-12 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-bold rounded-2xl shadow-lg shadow-violet-200/50 active:scale-[0.98] transition-all"
+          >
             応募する
           </button>
         </div>

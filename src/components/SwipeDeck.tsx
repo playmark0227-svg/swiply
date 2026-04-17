@@ -6,17 +6,23 @@ import { AnimatePresence, motion } from "framer-motion";
 import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
 import { Job } from "@/types/job";
-import { addLike } from "@/lib/services/likes";
+import { addLike, removeLike } from "@/lib/services/likes";
+import { useToast } from "./Toast";
+import { haptic } from "@/lib/haptic";
 
 interface SwipeDeckProps {
   jobs: Job[];
 }
 
+type HistoryEntry = { index: number; direction: "left" | "right" };
+
 export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [leaving, setLeaving] = useState<"left" | "right" | null>(null);
   const [showToast, setShowToast] = useState<"like" | "nope" | null>(null);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const router = useRouter();
+  const toast = useToast();
 
   const currentJob = jobs[currentIndex];
   const nextJob = jobs[currentIndex + 1];
@@ -25,13 +31,15 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
     (direction: "left" | "right") => {
       setLeaving(direction);
       setShowToast(direction === "right" ? "like" : "nope");
+      haptic(direction === "right" ? "success" : "soft");
+      setHistory((prev) => [...prev, { index: currentIndex, direction }]);
       setTimeout(() => {
         setCurrentIndex((prev) => prev + 1);
         setLeaving(null);
       }, 200);
       setTimeout(() => setShowToast(null), 800);
     },
-    []
+    [currentIndex]
   );
 
   const handleSwipeLeft = useCallback(() => {
@@ -44,8 +52,25 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   }, [currentJob, handleNext]);
 
   const handleSwipeUp = useCallback(() => {
-    if (currentJob) router.push(`/job/${currentJob.id}`);
+    if (currentJob) {
+      haptic("tick");
+      router.push(`/job/${currentJob.id}`);
+    }
   }, [currentJob, router]);
+
+  const handleUndo = useCallback(async () => {
+    const last = history[history.length - 1];
+    if (!last) return;
+    haptic("warn");
+    // Roll back the LIKE if this card was liked.
+    if (last.direction === "right") {
+      const job = jobs[last.index];
+      if (job) await removeLike(job.id);
+    }
+    setHistory((prev) => prev.slice(0, -1));
+    setCurrentIndex(last.index);
+    toast.show("1つ戻しました", "info");
+  }, [history, jobs, toast]);
 
   if (currentIndex >= jobs.length) {
     return (
@@ -63,13 +88,20 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
         </p>
         <div className="flex gap-3">
           <button
-            onClick={() => setCurrentIndex(0)}
+            onClick={() => {
+              haptic("tick");
+              setHistory([]);
+              setCurrentIndex(0);
+            }}
             className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl font-bold text-sm active:scale-95 transition-transform"
           >
             もう一度見る
           </button>
           <button
-            onClick={() => router.push("/likes")}
+            onClick={() => {
+              haptic("tick");
+              router.push("/likes");
+            }}
             className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-transform"
           >
             LIKEリスト
@@ -79,18 +111,17 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
     );
   }
 
+  const canUndo = history.length > 0;
+
   return (
     <div className="relative w-full h-full flex flex-col">
-      {/* Card area */}
       <div className="relative flex-1 min-h-0">
-        {/* Next card (background) */}
         {nextJob && (
           <div className="absolute inset-1 scale-[0.95] opacity-30 rounded-3xl overflow-hidden">
             <JobCard job={nextJob} />
           </div>
         )}
 
-        {/* Current card */}
         <AnimatePresence>
           {currentJob && !leaving && (
             <SwipeCard
@@ -120,7 +151,6 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
           )}
         </AnimatePresence>
 
-        {/* Toast notification */}
         <AnimatePresence>
           {showToast && (
             <motion.div
@@ -138,7 +168,6 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
           )}
         </AnimatePresence>
 
-        {/* Progress indicator */}
         <div className="absolute top-2 left-3 right-3 z-30">
           <div className="flex gap-1">
             {jobs.map((_, i) => (
@@ -156,16 +185,30 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
           </div>
         </div>
 
-        {/* Card counter */}
         <div className="absolute top-3 right-3 z-30">
-          <span className="text-[10px] font-bold text-white/50 bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-white/60 bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
             {currentIndex + 1} / {jobs.length}
           </span>
         </div>
       </div>
 
-      {/* Action buttons - below card */}
-      <div className="flex justify-center items-center gap-6 py-3 shrink-0">
+      {/* Action buttons */}
+      <div className="flex justify-center items-center gap-4 py-3 shrink-0">
+        <button
+          onClick={handleUndo}
+          disabled={!canUndo}
+          className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${
+            canUndo
+              ? "bg-white text-amber-500 border-gray-100/80 shadow-md shadow-gray-200/60 active:scale-90"
+              : "bg-gray-100 text-gray-300 border-transparent"
+          }`}
+          aria-label="1つ戻す"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 14L4 9m0 0l5-5M4 9h11a5 5 0 015 5v1" />
+          </svg>
+        </button>
+
         <button
           onClick={handleSwipeLeft}
           className="w-14 h-14 rounded-full bg-white shadow-lg shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 transition-all"
@@ -178,7 +221,7 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
 
         <button
           onClick={handleSwipeUp}
-          className="w-11 h-11 rounded-full bg-white shadow-lg shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 transition-all"
+          className="w-11 h-11 rounded-full bg-white shadow-md shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 transition-all"
           aria-label="詳細を見る"
         >
           <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
