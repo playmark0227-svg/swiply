@@ -55,7 +55,7 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
     if (!job) return;
     const url = typeof window !== "undefined" ? window.location.href : "";
     const shareData = {
-      title: `${job.title} - Warp`,
+      title: `${job.title} - SWIPLY`,
       text: `${job.company}の求人をチェック`,
       url,
     };

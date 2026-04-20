@@ -23,9 +23,9 @@ export default function Home() {
         {/* Logo top-left (mobile only — desktop uses Header) */}
         <div className="absolute top-5 left-5 md:hidden flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <span className="text-white text-sm font-black">W</span>
+            <span className="text-white text-sm font-black">S</span>
           </div>
-          <span className="text-white text-base font-black tracking-widest drop-shadow">Warp</span>
+          <span className="text-white text-base font-black tracking-widest drop-shadow">SWIPLY</span>
         </div>
 
         <div className="absolute top-6 right-5 md:top-8 md:right-8">
@@ -40,12 +40,12 @@ export default function Home() {
                 — a new way to find your next job.
               </p>
               <h1 className="text-[30px] md:text-[52px] lg:text-[68px] font-black leading-[1.15] md:leading-[1.05] text-white mb-3 md:mb-5 drop-shadow-lg">
-                求人がある企業に<br />
+                履歴書の前に、<br />
                 <span className="relative inline-block">
-                  <span className="relative z-10">Warp</span>
+                  <span className="relative z-10">スワイプ</span>
                   <span className="absolute inset-x-0 bottom-1 md:bottom-2 h-3 md:h-5 bg-yellow-300/80 -z-0"></span>
                 </span>
-                する。
+                でいい。
               </h1>
               <p className="text-white/80 text-[13px] md:text-base leading-relaxed mb-6 md:mb-8 max-w-[22rem] md:max-w-[32rem]">
                 スワイプひとつで、会いたい企業まで最短距離。<br />
@@ -112,7 +112,7 @@ export default function Home() {
             className="text-xl text-gray-600"
             style={{ fontFamily: '"Caveat", "Segoe Script", cursive' }}
           >
-            — Warp 運営チーム
+            — SWIPLY 運営チーム
           </div>
         </div>
       </section>
@@ -304,7 +304,7 @@ export default function Home() {
         <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 leading-tight mb-6">
           気になる企業に、<br />
           <span className="underline decoration-yellow-300 decoration-4 underline-offset-2">
-            Warp しよう
+            スワイプ しよう
           </span>
           。
         </h2>
@@ -320,7 +320,7 @@ export default function Home() {
 
         <div className="mt-10 text-[10px] text-gray-400">
           Made with coffee in Tokyo.<br />
-          © {new Date().getFullYear()} Warp
+          © {new Date().getFullYear()} SWIPLY
         </div>
       </section>
 

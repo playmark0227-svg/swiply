@@ -24,10 +24,10 @@ export default function SwipePage() {
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-11 md:h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5">
             <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-              <span className="text-white text-[10px] md:text-sm font-black">W</span>
+              <span className="text-white text-[10px] md:text-sm font-black">S</span>
             </div>
             <span className="text-base md:text-[17px] font-black tracking-tight text-gray-900">
-              Warp
+              SWIPLY
             </span>
           </Link>
 

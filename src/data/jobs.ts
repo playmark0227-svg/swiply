@@ -152,7 +152,7 @@ export const jobs: Job[] = [
   {
     id: "gig-2",
     type: "gig",
-    company: "WarpDelivery",
+    company: "スワイプデリバリー",
     title: "引越し補助スタッフ",
     salary: "日給 14,000円",
     location: "東京都世田谷区",

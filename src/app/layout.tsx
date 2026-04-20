@@ -9,7 +9,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Warp - 求人がある企業にWarpする。",
+  title: "SWIPLY - 履歴書の前に、スワイプでいい。",
   description:
     "スワイプひとつで、会いたい企業まで最短距離。履歴書も長文応募も要らない、新しい求人の探し方。",
 };

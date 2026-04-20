@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { haptic } from "@/lib/haptic";
 
 /**
- * Root pages (reachable via nav / logo) show the Warp logo.
+ * Root pages (reachable via nav / logo) show the SWIPLY logo.
  * Any other page shows a back button in place of the logo.
  */
 const ROOT_PAGES = new Set<string>([
@@ -57,10 +57,10 @@ export default function Header() {
           {isRoot ? (
             <Link href="/" className="flex items-center gap-2 px-1 shrink-0">
               <div className="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-sm shadow-violet-200">
-                <span className="text-white text-xs md:text-sm font-black">W</span>
+                <span className="text-white text-xs md:text-sm font-black">S</span>
               </div>
               <span className="text-[15px] md:text-[17px] font-black tracking-tight text-gray-900">
-                Warp
+                SWIPLY
               </span>
               {title && (
                 <span className="md:hidden flex items-center gap-2">
