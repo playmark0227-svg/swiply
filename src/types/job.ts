@@ -1,4 +1,4 @@
-export type JobType = "baito" | "career";
+export type JobType = "baito" | "career" | "gig";
 
 export interface Job {
   id: string;

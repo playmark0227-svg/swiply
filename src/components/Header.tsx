@@ -11,6 +11,7 @@ import { haptic } from "@/lib/haptic";
 const ROOT_PAGES = new Set<string>([
   "/",
   "/baito",
+  "/gig",
   "/career",
   "/swipe",
   "/profile",
@@ -23,6 +24,7 @@ const PAGE_TITLE: Record<string, string> = {
   "/notifications": "お知らせ",
   "/profile": "マイページ",
   "/baito": "アルバイト",
+  "/gig": "単発バイト",
   "/career": "正社員",
 };
 
@@ -30,6 +32,7 @@ const PAGE_TITLE: Record<string, string> = {
 const DESKTOP_TABS = [
   { href: "/", label: "ホーム", exact: true },
   { href: "/baito", label: "バイト" },
+  { href: "/gig", label: "単発" },
   { href: "/swipe", label: "スワイプ", accent: true },
   { href: "/career", label: "正社員" },
   { href: "/profile", label: "マイページ" },

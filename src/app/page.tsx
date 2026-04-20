@@ -61,6 +61,7 @@ export default function Home() {
               </div>
               <div className="flex gap-4 md:gap-6 mt-3 md:mt-5 text-[11px] md:text-sm text-white/60">
                 <Link href="/baito" className="underline underline-offset-4 hover:text-white transition">バイトを見る</Link>
+                <Link href="/gig" className="underline underline-offset-4 hover:text-white transition">単発を見る</Link>
                 <Link href="/career" className="underline underline-offset-4 hover:text-white transition">正社員を見る</Link>
               </div>
             </div>
