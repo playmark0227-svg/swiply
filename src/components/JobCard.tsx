@@ -40,11 +40,13 @@ export default function JobCard({ job, active = true }: JobCardProps) {
           <video
             ref={videoRef}
             src={videoUrl}
+            poster={job.image}
             muted={muted}
             loop
             playsInline
             preload="auto"
             onLoadedData={() => setVideoReady(true)}
+            onCanPlay={() => setVideoReady(true)}
             onError={() => setVideoFailed(true)}
             className="absolute inset-0 w-full h-full object-cover"
           />
@@ -52,11 +54,6 @@ export default function JobCard({ job, active = true }: JobCardProps) {
           // Final fallback: solid gradient (rare — only if the video CDN is
           // unreachable AND the browser blocked autoplay).
           <div className="absolute inset-0 bg-gradient-to-br from-violet-700 via-fuchsia-700 to-rose-600" />
-        )}
-
-        {/* Skeleton shimmer until first frame is ready */}
-        {!videoReady && !videoFailed && (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 animate-pulse" />
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/5 pointer-events-none" />
@@ -67,12 +64,6 @@ export default function JobCard({ job, active = true }: JobCardProps) {
         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-gray-900 backdrop-blur-sm shadow-sm">
           {job.employmentType}
         </span>
-        {videoReady && !videoFailed && (
-          <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/90 text-white backdrop-blur-sm shadow flex items-center gap-1">
-            <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
-            LIVE
-          </span>
-        )}
       </div>
 
       {/* Mute / unmute toggle */}

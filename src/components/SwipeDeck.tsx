@@ -7,8 +7,12 @@ import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
 import { Job } from "@/types/job";
 import { addLike, removeLike } from "@/lib/services/likes";
+import { getJobVideo } from "@/lib/services/jobMedia";
 import { useToast } from "./Toast";
 import { haptic } from "@/lib/haptic";
+
+/** How many cards ahead of the current one to start buffering. */
+const PREFETCH_AHEAD = 3;
 
 interface SwipeDeckProps {
   jobs: Job[];
@@ -26,6 +30,9 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
 
   const currentJob = jobs[currentIndex];
   const nextJob = jobs[currentIndex + 1];
+
+  // List of upcoming jobs to prefetch (next PREFETCH_AHEAD cards).
+  const prefetchJobs = jobs.slice(currentIndex + 1, currentIndex + 1 + PREFETCH_AHEAD);
 
   const handleNext = useCallback(
     (direction: "left" | "right") => {
@@ -298,6 +305,23 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
         </button>
+      </div>
+
+      {/* Prefetch upcoming videos in the background. These elements are
+          off-screen but mounted, so the browser starts buffering them
+          before the user swipes. preload="auto" + muted is the standard
+          incantation for "download the file but don't play it yet". */}
+      <div aria-hidden className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none">
+        {prefetchJobs.map((j) => (
+          <video
+            key={`prefetch-${j.id}`}
+            src={getJobVideo(j)}
+            muted
+            playsInline
+            preload="auto"
+            tabIndex={-1}
+          />
+        ))}
       </div>
     </div>
   );
