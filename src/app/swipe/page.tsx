@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SwipeDeck from "@/components/SwipeDeck";
+import Logo from "@/components/Logo";
 import { getJobsByType } from "@/lib/services/jobs";
 import type { Job, JobType } from "@/types/job";
 
@@ -23,9 +24,7 @@ export default function SwipePage() {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-11 md:h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-1.5">
-            <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center">
-              <span className="text-white text-[10px] md:text-sm font-black">S</span>
-            </div>
+            <Logo size={28} radius={8} priority className="md:!w-8 md:!h-8" />
             <span className="text-base md:text-[17px] font-black tracking-tight text-gray-900">
               SWIPLY
             </span>

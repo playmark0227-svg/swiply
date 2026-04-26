@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Logo from "@/components/Logo";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { haptic } from "@/lib/haptic";
@@ -41,9 +42,7 @@ function LoginInner() {
       <div className="flex-1 flex items-center justify-center px-5 py-10">
         <div className="w-full max-w-sm">
           <Link href="/" className="flex items-center justify-center gap-2 mb-8">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center shadow-md shadow-violet-200">
-              <span className="text-white text-base font-black">S</span>
-            </div>
+            <Logo size={40} radius={12} priority className="shadow-md shadow-violet-200" />
             <span className="text-xl font-black tracking-tight text-gray-900">SWIPLY</span>
           </Link>
 

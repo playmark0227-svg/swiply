@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import JobListCard from "@/components/JobListCard";
+import Logo from "@/components/Logo";
 import OnboardingModal from "@/components/OnboardingModal";
 import { getAllJobs } from "@/lib/services/jobs";
 import { getProfile } from "@/lib/services/profile";
@@ -61,9 +62,7 @@ export default function Home() {
 
         {/* Logo top-left (mobile only — desktop uses Header) */}
         <div className="absolute top-5 left-5 md:hidden flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <span className="text-white text-sm font-black">S</span>
-          </div>
+          <Logo size={32} radius={10} priority />
           <span className="text-white text-base font-black tracking-widest drop-shadow">SWIPLY</span>
         </div>
 
