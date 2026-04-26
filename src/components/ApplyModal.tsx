@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Logo from "./Logo";
 import type { Job } from "@/types/job";
 import {
   type Application,
@@ -83,9 +84,12 @@ export default function ApplyModal({ job, open, onClose, onSubmitted }: Props) {
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
           >
             <div className="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-sm font-extrabold text-gray-900">
-                {done ? "応募が完了しました" : "応募内容の確認"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <Logo size={22} radius={6} />
+                <h2 className="text-sm font-extrabold text-gray-900">
+                  {done ? "応募が完了しました" : "応募内容の確認"}
+                </h2>
+              </div>
               <button
                 onClick={onClose}
                 aria-label="閉じる"

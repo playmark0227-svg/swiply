@@ -62,9 +62,13 @@ export default function Header() {
         {/* Left: logo or back */}
         <div className="flex items-center gap-6 md:gap-10 min-w-0">
           {isRoot ? (
-            <Link href="/" className="flex items-center gap-2 px-1 shrink-0">
-              <Logo size={32} className="md:!w-9 md:!h-9 shadow-sm shadow-violet-200" priority />
-              <span className="text-[15px] md:text-[17px] font-black tracking-tight text-gray-900">
+            <Link href="/" className="flex items-center gap-2 px-1 shrink-0 group">
+              <Logo
+                size={36}
+                className="md:!w-10 md:!h-10 shadow-md shadow-violet-200/70 ring-1 ring-violet-100 group-hover:scale-[1.04] transition-transform"
+                priority
+              />
+              <span className="text-[16px] md:text-[19px] font-black tracking-tight bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent">
                 SWIPLY
               </span>
               {title && (
@@ -77,18 +81,31 @@ export default function Header() {
               )}
             </Link>
           ) : (
-            <button
-              onClick={() => {
-                haptic("tick");
-                router.back();
-              }}
-              aria-label="戻る"
-              className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-90 transition shrink-0"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  haptic("tick");
+                  router.back();
+                }}
+                aria-label="戻る"
+                className="w-9 h-9 -ml-1 rounded-xl flex items-center justify-center text-gray-700 hover:bg-gray-100 active:scale-90 transition shrink-0"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              {/* Subtle brand mark on non-root pages, mobile only */}
+              <Link
+                href="/"
+                aria-label="SWIPLY ホーム"
+                className="md:hidden flex items-center gap-1.5 -ml-1"
+              >
+                <Logo size={26} radius={7} />
+                <span className="text-[13px] font-black tracking-tight bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
+                  SWIPLY
+                </span>
+              </Link>
+            </div>
           )}
 
           {/* Desktop tabs (md+) */}

@@ -108,7 +108,13 @@ export default function Home() {
       </section>
 
       {/* ── Quick stats strip ── */}
-      <section className="border-y border-gray-900/10 bg-white">
+      <section className="relative border-y border-gray-900/10 bg-white">
+        <div className="absolute top-2 right-3 md:top-3 md:right-5 flex items-center gap-1 opacity-70">
+          <Logo size={14} radius={4} />
+          <span className="text-[8px] md:text-[9px] font-black tracking-[0.2em] text-gray-400">
+            SWIPLY
+          </span>
+        </div>
         <div className="max-w-lg md:max-w-5xl mx-auto px-5 md:px-8 py-5 md:py-8 flex items-center justify-between">
           <div>
             <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">12,347</p>
@@ -387,9 +393,15 @@ export default function Home() {
           登録2分 ／ 履歴書不要 ／ いつでも退会OK
         </p>
 
-        <div className="mt-10 text-[10px] text-gray-400">
-          Made with coffee in Tokyo.<br />
-          © {new Date().getFullYear()} SWIPLY
+        <div className="mt-10 flex flex-col items-center gap-2 text-[10px] text-gray-400">
+          <Logo size={36} radius={10} className="opacity-90" />
+          <p className="font-black tracking-[0.25em] bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent text-[11px]">
+            SWIPLY
+          </p>
+          <p>
+            Made with coffee in Tokyo.
+            <br />© {new Date().getFullYear()} SWIPLY
+          </p>
         </div>
       </section>
 

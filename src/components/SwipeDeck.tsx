@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
+import Logo from "./Logo";
 import { Job } from "@/types/job";
 import { addLike, removeLike } from "@/lib/services/likes";
 import { useToast } from "./Toast";
@@ -132,11 +133,10 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   if (currentIndex >= jobs.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-100 to-fuchsia-100 flex items-center justify-center mb-4">
-          <svg className="w-8 h-8 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
+        <Logo size={64} radius={18} className="mb-4 shadow-lg shadow-violet-200/60 ring-2 ring-white" />
+        <p className="text-[10px] tracking-[0.3em] font-black text-violet-500 mb-1">
+          SWIPLY
+        </p>
         <h2 className="text-lg font-extrabold text-gray-900 mb-1">
           全ての求人をチェック済み！
         </h2>

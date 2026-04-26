@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import Logo from "@/components/Logo";
 import {
   type Application,
   getApplications,
@@ -199,11 +200,10 @@ function stepIndex(status: Application["status"]): number {
 function EmptyState() {
   return (
     <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
-      <div className="w-16 h-16 rounded-2xl bg-violet-50 flex items-center justify-center mx-auto mb-4">
-        <svg className="w-8 h-8 text-violet-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-        </svg>
-      </div>
+      <Logo size={56} radius={16} className="mx-auto mb-3 shadow-lg shadow-violet-200/50 ring-2 ring-white" />
+      <p className="text-[10px] tracking-[0.3em] font-black bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent mb-2">
+        SWIPLY
+      </p>
       <h2 className="text-sm font-bold text-gray-900 mb-1">まだ応募がありません</h2>
       <p className="text-xs text-gray-400 mb-6">気になる求人を見つけて応募してみよう</p>
       <Link

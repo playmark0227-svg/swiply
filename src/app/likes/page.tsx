@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import Logo from "@/components/Logo";
 import { getLikedJobIds, removeLike } from "@/lib/services/likes";
 import { getAllJobs } from "@/lib/services/jobs";
 import { Job } from "@/types/job";
@@ -46,11 +47,10 @@ export default function LikesPage() {
 
         {loaded && likedJobs.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-pink-50 flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-pink-300" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </div>
+            <Logo size={56} radius={16} className="mx-auto mb-3 shadow-lg shadow-pink-200/40 ring-2 ring-white" />
+            <p className="text-[10px] tracking-[0.3em] font-black bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent mb-2">
+              SWIPLY
+            </p>
             <h2 className="text-sm font-bold text-gray-900 mb-1">まだ LIKE した求人がありません</h2>
             <p className="text-xs text-gray-400 mb-6">
               スワイプで気になる求人をLIKEしよう

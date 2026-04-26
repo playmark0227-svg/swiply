@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import Logo from "@/components/Logo";
 import { haptic } from "@/lib/haptic";
 
 type NotifType = "new" | "like" | "system" | "application";
@@ -184,7 +185,10 @@ export default function NotificationsPage() {
 function EmptyState() {
   return (
     <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
-      <div className="text-3xl mb-2">🔔</div>
+      <Logo size={56} radius={16} className="mx-auto mb-3 shadow-lg shadow-amber-200/40 ring-2 ring-white" />
+      <p className="text-[10px] tracking-[0.3em] font-black bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent mb-2">
+        SWIPLY
+      </p>
       <p className="text-sm font-bold text-gray-900 mb-1">お知らせはありません</p>
       <p className="text-xs text-gray-400">新着求人や応募ステータスをここでお知らせします</p>
     </div>

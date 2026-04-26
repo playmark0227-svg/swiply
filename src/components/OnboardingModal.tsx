@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Logo from "./Logo";
 import type { UserProfile } from "@/types/profile";
 import { CATEGORY_OPTIONS, REGION_OPTIONS } from "@/lib/services/search";
 import { saveProfile } from "@/lib/services/profile";
@@ -88,8 +89,17 @@ export default function OnboardingModal({ open, profile, onClose, onSaved }: Pro
             exit={{ y: "100%", opacity: 0 }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
           >
+            {/* Brand header */}
+            <div className="flex items-center gap-2 px-5 pt-4 pb-1">
+              <Logo size={26} radius={7} />
+              <span className="text-[13px] font-black tracking-tight bg-gradient-to-r from-violet-600 to-fuchsia-500 bg-clip-text text-transparent">
+                SWIPLY
+              </span>
+              <span className="text-[10px] text-gray-300 ml-1">へようこそ</span>
+            </div>
+
             {/* Progress */}
-            <div className="px-5 pt-4 pb-2">
+            <div className="px-5 pt-2 pb-2">
               <div className="flex gap-1">
                 {Array.from({ length: totalSteps }).map((_, i) => (
                   <div
