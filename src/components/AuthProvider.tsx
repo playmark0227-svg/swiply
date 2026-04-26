@@ -1,0 +1,63 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  type AuthSession,
+  getCurrentSession,
+  signIn as svcSignIn,
+  signOut as svcSignOut,
+  signUp as svcSignUp,
+  subscribeAuth,
+} from "@/lib/services/userAuth";
+
+interface AuthContextValue {
+  session: AuthSession | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<AuthSession>;
+  signUp: (email: string, password: string, displayName: string) => Promise<AuthSession>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setSession(getCurrentSession());
+    const unsub = subscribeAuth((s) => {
+      setSession(s);
+      setLoading(false);
+    });
+    setLoading(false);
+    return unsub;
+  }, []);
+
+  async function signIn(email: string, password: string) {
+    const s = await svcSignIn(email, password);
+    setSession(s);
+    return s;
+  }
+  async function signUp(email: string, password: string, displayName: string) {
+    const s = await svcSignUp(email, password, displayName);
+    setSession(s);
+    return s;
+  }
+  async function signOut() {
+    await svcSignOut();
+    setSession(null);
+  }
+
+  return (
+    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+}

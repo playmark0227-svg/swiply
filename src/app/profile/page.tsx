@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import { useRouter } from "next/navigation";
 import { getProfile, saveProfile } from "@/lib/services/profile";
 import { UserProfile, defaultProfile } from "@/types/profile";
 import { getApplications, type Application } from "@/lib/services/applications";
+import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { haptic } from "@/lib/haptic";
 
@@ -50,11 +52,20 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [apps, setApps] = useState<Application[]>([]);
   const toast = useToast();
+  const auth = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
-    getProfile().then(setProfile);
+    getProfile().then((p) => {
+      // First-time hint: pre-fill name from session display name if empty.
+      if (!p.name && auth.session?.displayName) {
+        setProfile({ ...p, name: auth.session.displayName });
+      } else {
+        setProfile(p);
+      }
+    });
     getApplications().then(setApps);
-  }, []);
+  }, [auth.session]);
 
   const completeness = useMemo(() => computeCompleteness(profile), [profile]);
   const activeApps = apps.filter((a) => a.status !== "withdrawn" && a.status !== "rejected");
@@ -129,6 +140,61 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+
+        {/* KYC status card */}
+        <Link
+          href="/verify"
+          className="block mb-3 rounded-2xl border p-3.5 transition active:scale-[0.99] hover:shadow-sm"
+          style={
+            profile.kyc.status === "verified"
+              ? { backgroundColor: "#ecfdf5", borderColor: "#a7f3d0" }
+              : { backgroundColor: "#fff", borderColor: "#e5e7eb" }
+          }
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                profile.kyc.status === "verified"
+                  ? "bg-emerald-500"
+                  : "bg-violet-100"
+              }`}
+            >
+              {profile.kyc.status === "verified" ? (
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className={`text-[10px] tracking-[0.2em] font-bold ${
+                  profile.kyc.status === "verified" ? "text-emerald-600" : "text-violet-500"
+                }`}
+              >
+                ID VERIFICATION
+              </p>
+              <p className="text-[13px] font-extrabold text-gray-900">
+                {profile.kyc.status === "verified"
+                  ? "本人確認済み"
+                  : profile.kyc.status === "rejected"
+                  ? "確認に失敗 - 再試行する"
+                  : "本人確認をする →"}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                {profile.kyc.status === "verified"
+                  ? "信頼バッジ付き。優良企業のスカウト対象に。"
+                  : "免許証＋顔写真でAI照合（3分）"}
+              </p>
+            </div>
+            <svg className="w-4 h-4 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </Link>
 
         {/* Quick links */}
         <div className="grid grid-cols-3 gap-2 mb-6">
@@ -380,6 +446,59 @@ export default function ProfilePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Account */}
+          <SectionTitle>アカウント</SectionTitle>
+          <div className="rounded-2xl bg-white border border-gray-100 p-4">
+            {auth.session ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-gray-400">ログイン中</p>
+                    <p className="text-sm font-extrabold text-gray-900 truncate">
+                      {auth.session.displayName}
+                    </p>
+                    <p className="text-[11px] text-gray-500 truncate">{auth.session.email}</p>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-600">
+                    ●ログイン済
+                  </span>
+                </div>
+                <button
+                  onClick={async () => {
+                    haptic("warn");
+                    if (!confirm("ログアウトしますか？")) return;
+                    await auth.signOut();
+                    toast.show("ログアウトしました", "info");
+                    router.push("/login");
+                  }}
+                  className="w-full py-2.5 rounded-xl border border-gray-200 text-[12px] font-bold text-gray-600 hover:border-rose-200 hover:text-rose-500 transition"
+                >
+                  ログアウト
+                </button>
+              </>
+            ) : (
+              <div>
+                <p className="text-[12px] text-gray-600 mb-3 leading-relaxed">
+                  ログインすると、応募履歴やLIKEを複数の端末で同期できます。
+                </p>
+                <div className="flex gap-2">
+                  <Link
+                    href="/login"
+                    className="flex-1 text-center py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[12px] font-extrabold shadow-md"
+                  >
+                    ログイン
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="flex-1 text-center py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 text-[12px] font-bold"
+                  >
+                    新規登録
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>

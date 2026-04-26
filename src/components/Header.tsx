@@ -19,6 +19,7 @@ const ROOT_PAGES = new Set<string>([
   "/profile",
   "/likes",
   "/notifications",
+  "/verify",
 ]);
 
 const PAGE_TITLE: Record<string, string> = {
@@ -30,6 +31,7 @@ const PAGE_TITLE: Record<string, string> = {
   "/career": "正社員",
   "/search": "検索",
   "/applications": "応募管理",
+  "/verify": "本人確認",
 };
 
 /** Tabs rendered inline in the header on desktop (md+). */

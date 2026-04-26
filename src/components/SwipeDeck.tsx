@@ -178,7 +178,7 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
       <div className="relative flex-1 min-h-0">
         {nextJob && (
           <div className="absolute inset-1 scale-[0.95] opacity-30 rounded-3xl overflow-hidden">
-            <JobCard job={nextJob} />
+            <JobCard job={nextJob} active={false} />
           </div>
         )}
 
@@ -190,7 +190,7 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
               onSwipeRight={handleSwipeRight}
               onSwipeUp={handleSwipeUp}
             >
-              <JobCard job={currentJob} />
+              <JobCard job={currentJob} active />
             </SwipeCard>
           )}
 
@@ -206,7 +206,7 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
               }}
               transition={{ duration: 0.2 }}
             >
-              <JobCard job={currentJob} />
+              <JobCard job={currentJob} active={false} />
             </motion.div>
           )}
         </AnimatePresence>

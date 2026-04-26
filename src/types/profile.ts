@@ -1,3 +1,15 @@
+export type KycStatus = "unverified" | "pending" | "verified" | "rejected";
+
+export interface KycRecord {
+  status: KycStatus;
+  submittedAt?: string;
+  verifiedAt?: string;
+  /** Demo confidence score from the simulated face match. */
+  matchConfidence?: number;
+  /** Last 4 of the document number for display only. */
+  documentLast4?: string;
+}
+
 export interface UserProfile {
   name: string;
   age: string;
@@ -18,6 +30,8 @@ export interface UserProfile {
   onboarded: boolean;
   /** Email/notification opt-ins. */
   notifyNewMatches: boolean;
+  /** Identity verification (eKYC) state. */
+  kyc: KycRecord;
 }
 
 export const defaultProfile: UserProfile = {
@@ -38,4 +52,5 @@ export const defaultProfile: UserProfile = {
   education: "",
   onboarded: false,
   notifyNewMatches: true,
+  kyc: { status: "unverified" },
 };

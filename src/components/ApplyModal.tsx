@@ -122,6 +122,27 @@ export default function ApplyModal({ job, open, onClose, onSubmitted }: Props) {
                 </div>
               )}
 
+              {!done && profile && profile.kyc.status !== "verified" && (
+                <a
+                  href="/verify"
+                  className="block rounded-2xl border border-violet-200 bg-violet-50/60 p-3 text-[12px] text-violet-700 hover:bg-violet-100 transition"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-lg bg-violet-200 flex items-center justify-center shrink-0">
+                      <svg className="w-4 h-4 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-extrabold">本人確認が未完了です</p>
+                      <p className="text-[11px] opacity-90">
+                        確認済みのユーザーは選考通過率が約2.3倍。今すぐ確認 →
+                      </p>
+                    </div>
+                  </div>
+                </a>
+              )}
+
               {!done && (
                 <>
                   {/* Profile preview */}
