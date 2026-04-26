@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import { Job } from "@/types/job";
 import { getJobVideo } from "@/lib/services/jobMedia";
 
 interface JobCardProps {
   job: Job;
-  /** When false, video is paused and we show only the poster. Used for
-   *  off-screen / preview cards in the deck. */
+  /** When false, video is paused. Used for off-screen / preview cards. */
   active?: boolean;
 }
 
@@ -25,7 +23,8 @@ export default function JobCard({ job, active = true }: JobCardProps) {
     if (!v) return;
     if (active && !videoFailed) {
       v.play().catch(() => {
-        // Some browsers block autoplay even with muted; keep the poster.
+        // Some browsers block autoplay even with muted; mark as failed and
+        // surface the play button.
         setVideoFailed(true);
       });
     } else {
@@ -34,33 +33,30 @@ export default function JobCard({ job, active = true }: JobCardProps) {
   }, [active, videoFailed]);
 
   return (
-    <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-white select-none">
-      {/* Background — image always renders as poster/fallback, video overlays when ready */}
-      <div className="absolute inset-0">
-        <Image
-          src={job.image}
-          alt={job.company}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 400px"
-          priority
-        />
-
-        {!videoFailed && (
+    <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-gray-900 select-none">
+      {/* Background — video only */}
+      <div className="absolute inset-0 bg-black">
+        {!videoFailed ? (
           <video
             ref={videoRef}
             src={videoUrl}
-            poster={job.image}
             muted={muted}
             loop
             playsInline
             preload="auto"
             onLoadedData={() => setVideoReady(true)}
             onError={() => setVideoFailed(true)}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
-              videoReady ? "opacity-100" : "opacity-0"
-            }`}
+            className="absolute inset-0 w-full h-full object-cover"
           />
+        ) : (
+          // Final fallback: solid gradient (rare — only if the video CDN is
+          // unreachable AND the browser blocked autoplay).
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-700 via-fuchsia-700 to-rose-600" />
+        )}
+
+        {/* Skeleton shimmer until first frame is ready */}
+        {!videoReady && !videoFailed && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 animate-pulse" />
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/5 pointer-events-none" />
@@ -71,16 +67,16 @@ export default function JobCard({ job, active = true }: JobCardProps) {
         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-gray-900 backdrop-blur-sm shadow-sm">
           {job.employmentType}
         </span>
-        {!videoFailed && videoReady && (
+        {videoReady && !videoFailed && (
           <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/90 text-white backdrop-blur-sm shadow flex items-center gap-1">
             <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
-            VIDEO
+            LIVE
           </span>
         )}
       </div>
 
       {/* Mute / unmute toggle */}
-      {!videoFailed && videoReady && active && (
+      {videoReady && !videoFailed && active && (
         <button
           onClick={(e) => {
             e.stopPropagation();
