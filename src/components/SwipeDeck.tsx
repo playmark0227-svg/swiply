@@ -7,12 +7,8 @@ import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
 import { Job } from "@/types/job";
 import { addLike, removeLike } from "@/lib/services/likes";
-import { getJobVideo } from "@/lib/services/jobMedia";
 import { useToast } from "./Toast";
 import { haptic } from "@/lib/haptic";
-
-/** How many cards ahead of the current one to start buffering. */
-const PREFETCH_AHEAD = 3;
 
 interface SwipeDeckProps {
   jobs: Job[];
@@ -20,30 +16,25 @@ interface SwipeDeckProps {
 
 type HistoryEntry = { index: number; direction: "left" | "right" };
 
+/** How many cards we keep mounted in the stack. The top one plays; the
+ *  others stay paused but their <video> elements have already buffered. */
+const STACK_SIZE = 3;
+
 export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [leaving, setLeaving] = useState<"left" | "right" | null>(null);
   const [showToast, setShowToast] = useState<"like" | "nope" | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const router = useRouter();
   const toast = useToast();
 
   const currentJob = jobs[currentIndex];
-  const nextJob = jobs[currentIndex + 1];
-
-  // List of upcoming jobs to prefetch (next PREFETCH_AHEAD cards).
-  const prefetchJobs = jobs.slice(currentIndex + 1, currentIndex + 1 + PREFETCH_AHEAD);
 
   const handleNext = useCallback(
     (direction: "left" | "right") => {
-      setLeaving(direction);
       setShowToast(direction === "right" ? "like" : "nope");
       haptic(direction === "right" ? "success" : "soft");
       setHistory((prev) => [...prev, { index: currentIndex, direction }]);
-      setTimeout(() => {
-        setCurrentIndex((prev) => prev + 1);
-        setLeaving(null);
-      }, 200);
+      setCurrentIndex((prev) => prev + 1);
       setTimeout(() => setShowToast(null), 800);
     },
     [currentIndex]
@@ -69,7 +60,6 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
     const last = history[history.length - 1];
     if (!last) return;
     haptic("warn");
-    // Roll back the LIKE if this card was liked.
     if (last.direction === "right") {
       const job = jobs[last.index];
       if (job) await removeLike(job.id);
@@ -180,42 +170,59 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
 
   const canUndo = history.length > 0;
 
+  // Render a stable stack of cards. The top card plays its video; the
+  // others stay paused but their <video> elements are already mounted
+  // (and their data buffered via preload="auto"), so when one is promoted
+  // to the top via swipe, playback starts instantly with no fresh fetch.
+  const stack = jobs.slice(currentIndex, currentIndex + STACK_SIZE);
+
   return (
     <div className="relative w-full h-full flex flex-col">
       <div className="relative flex-1 min-h-0">
-        {nextJob && (
-          <div className="absolute inset-1 scale-[0.95] opacity-30 rounded-3xl overflow-hidden">
-            <JobCard job={nextJob} active={false} />
-          </div>
-        )}
-
+        {/* Stack — render BACK-TO-FRONT so the top card is last in the
+            DOM and naturally has the highest stacking. Stable keys mean
+            cards stay mounted across swipes; only their stack position
+            (and active flag) changes. */}
         <AnimatePresence>
-          {currentJob && !leaving && (
-            <SwipeCard
-              key={currentJob.id}
-              onSwipeLeft={handleSwipeLeft}
-              onSwipeRight={handleSwipeRight}
-              onSwipeUp={handleSwipeUp}
-            >
-              <JobCard job={currentJob} active />
-            </SwipeCard>
-          )}
-
-          {currentJob && leaving && (
-            <motion.div
-              key={`${currentJob.id}-leaving`}
-              className="absolute w-full h-full"
-              initial={{ x: 0, opacity: 1 }}
-              animate={{
-                x: leaving === "right" ? 400 : -400,
-                opacity: 0,
-                rotate: leaving === "right" ? 20 : -20,
-              }}
-              transition={{ duration: 0.2 }}
-            >
-              <JobCard job={currentJob} active={false} />
-            </motion.div>
-          )}
+          {[...stack].reverse().map((job, reverseIdx) => {
+            const stackPos = stack.length - 1 - reverseIdx;
+            const isTop = stackPos === 0;
+            return (
+              <motion.div
+                key={job.id}
+                className="absolute inset-0"
+                style={{ zIndex: stack.length - stackPos }}
+                initial={false}
+                animate={{
+                  scale: 1 - stackPos * 0.04,
+                  y: stackPos * 8,
+                  opacity: stackPos === 0 ? 1 : stackPos === 1 ? 0.55 : 0.25,
+                }}
+                exit={{
+                  x:
+                    history[history.length - 1]?.direction === "right"
+                      ? 400
+                      : -400,
+                  opacity: 0,
+                  rotate:
+                    history[history.length - 1]?.direction === "right"
+                      ? 20
+                      : -20,
+                  transition: { duration: 0.22 },
+                }}
+                transition={{ type: "spring", stiffness: 320, damping: 30 }}
+              >
+                <SwipeCard
+                  disabled={!isTop}
+                  onSwipeLeft={handleSwipeLeft}
+                  onSwipeRight={handleSwipeRight}
+                  onSwipeUp={handleSwipeUp}
+                >
+                  <JobCard job={job} active={isTop} />
+                </SwipeCard>
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
 
         <AnimatePresence>
@@ -305,23 +312,6 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
         </button>
-      </div>
-
-      {/* Prefetch upcoming videos in the background. These elements are
-          off-screen but mounted, so the browser starts buffering them
-          before the user swipes. preload="auto" + muted is the standard
-          incantation for "download the file but don't play it yet". */}
-      <div aria-hidden className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none">
-        {prefetchJobs.map((j) => (
-          <video
-            key={`prefetch-${j.id}`}
-            src={getJobVideo(j)}
-            muted
-            playsInline
-            preload="auto"
-            tabIndex={-1}
-          />
-        ))}
       </div>
     </div>
   );

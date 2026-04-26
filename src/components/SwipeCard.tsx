@@ -8,6 +8,11 @@ interface SwipeCardProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onSwipeUp: () => void;
+  /** When true, the card stays mounted but cannot be dragged. Used for
+   *  inactive cards in the stack — keeps the JSX shape stable so React
+   *  doesn't remount the underlying JobCard (and its <video>) when a
+   *  card is promoted from the stack to the top. */
+  disabled?: boolean;
 }
 
 const SWIPE_THRESHOLD = 100;
@@ -18,6 +23,7 @@ export default function SwipeCard({
   onSwipeLeft,
   onSwipeRight,
   onSwipeUp,
+  disabled = false,
 }: SwipeCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -51,13 +57,15 @@ export default function SwipeCard({
 
   return (
     <motion.div
-      className="absolute w-full h-full cursor-grab active:cursor-grabbing"
+      className={`absolute w-full h-full ${
+        disabled ? "" : "cursor-grab active:cursor-grabbing"
+      }`}
       style={{ x, y, rotate, opacity }}
-      drag
+      drag={disabled ? false : true}
       dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
       dragElastic={0.9}
-      onDragEnd={handleDragEnd}
-      whileTap={{ scale: 1.01 }}
+      onDragEnd={disabled ? undefined : handleDragEnd}
+      whileTap={disabled ? undefined : { scale: 1.01 }}
     >
       {/* LIKE indicator */}
       <motion.div
