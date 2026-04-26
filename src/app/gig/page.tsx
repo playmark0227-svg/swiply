@@ -1,18 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import JobListCard from "@/components/JobListCard";
 import JobListSkeleton from "@/components/JobListSkeleton";
+import SearchBar from "@/components/SearchBar";
+import FilterToolbar from "@/components/FilterToolbar";
 import { getJobsByType } from "@/lib/services/jobs";
+import { applyFilters, type JobFilters } from "@/lib/services/search";
 import type { Job } from "@/types/job";
 import { haptic } from "@/lib/haptic";
 
 export default function GigPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [filters, setFilters] = useState<JobFilters>({
+    type: "gig",
+    region: "all",
+    category: "all",
+    minSalary: 0,
+    sort: "recommended",
+  });
 
   useEffect(() => {
     getJobsByType("gig").then((j) => {
@@ -20,6 +30,8 @@ export default function GigPage() {
       setLoaded(true);
     });
   }, []);
+
+  const visible = useMemo(() => applyFilters(jobs, filters), [jobs, filters]);
 
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
@@ -29,7 +41,7 @@ export default function GigPage() {
           <div>
             <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">単発バイト</h1>
             <p className="text-[11px] md:text-xs text-gray-400 mt-0.5">
-              {loaded ? `${jobs.length}件の1日だけの仕事` : "読み込み中…"}
+              {loaded ? `${jobs.length}件中 ${visible.length}件表示` : "読み込み中…"}
             </p>
           </div>
           <Link
@@ -44,21 +56,53 @@ export default function GigPage() {
           </Link>
         </div>
 
+        <div className="space-y-3 mb-4">
+          <SearchBar
+            defaultValue={filters.q ?? ""}
+            onSubmit={(q) => setFilters((f) => ({ ...f, q }))}
+            placeholder="日払い・単発キーワード"
+          />
+          <FilterToolbar
+            filters={filters}
+            onChange={setFilters}
+            hideTypeFilter
+            resultCount={visible.length}
+          />
+        </div>
+
         {!loaded ? (
           <JobListSkeleton count={12} />
-        ) : jobs.length === 0 ? (
-          <div className="text-center py-20 text-xs text-gray-400">
-            該当する求人がありません
-          </div>
+        ) : visible.length === 0 ? (
+          <EmptyState onReset={() => setFilters({ type: "gig", sort: "recommended" })} />
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 md:gap-4">
-            {jobs.map((job) => (
+            {visible.map((job) => (
               <JobListCard key={job.id} job={job} />
             ))}
           </div>
         )}
       </main>
       <BottomNav />
+    </div>
+  );
+}
+
+function EmptyState({ onReset }: { onReset: () => void }) {
+  return (
+    <div className="text-center py-16 md:py-24 bg-white rounded-3xl border border-gray-100">
+      <div className="w-14 h-14 mx-auto rounded-2xl bg-gray-50 flex items-center justify-center mb-3">
+        <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+      <p className="text-sm font-bold text-gray-900 mb-1">条件に合う求人が見つかりません</p>
+      <p className="text-xs text-gray-400 mb-5">条件をリセットしてみましょう</p>
+      <button
+        onClick={onReset}
+        className="px-5 py-2 bg-gray-900 text-white text-xs font-bold rounded-xl active:scale-95 transition"
+      >
+        条件をリセット
+      </button>
     </div>
   );
 }

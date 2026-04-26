@@ -2,11 +2,50 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
+import JobListCard from "@/components/JobListCard";
+import OnboardingModal from "@/components/OnboardingModal";
+import { getAllJobs } from "@/lib/services/jobs";
+import { getProfile } from "@/lib/services/profile";
+import { getRecentlyViewedIds } from "@/lib/services/recentlyViewed";
+import { scoreJobs } from "@/lib/services/recommendations";
+import type { Job } from "@/types/job";
+import type { UserProfile } from "@/types/profile";
 
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
 export default function Home() {
+  const [recommended, setRecommended] = useState<Job[]>([]);
+  const [recents, setRecents] = useState<Job[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [allJobs, setAllJobs] = useState<Job[]>([]);
+  const [onboardOpen, setOnboardOpen] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getAllJobs(), getProfile()]).then(([all, p]) => {
+      setProfile(p);
+      setAllJobs(all);
+      const scored = scoreJobs(all, p).slice(0, 8).map((s) => s.job);
+      setRecommended(scored);
+      const ids = getRecentlyViewedIds();
+      setRecents(
+        ids.map((id) => all.find((j) => j.id === id)).filter((j): j is Job => !!j).slice(0, 8)
+      );
+      if (!p.onboarded) {
+        // Slight delay to avoid jarring open on first paint.
+        setTimeout(() => setOnboardOpen(true), 600);
+      }
+    });
+  }, []);
+
+  function handleOnboardSaved(p: UserProfile) {
+    setProfile(p);
+    if (allJobs.length > 0) {
+      setRecommended(scoreJobs(allJobs, p).slice(0, 8).map((s) => s.job));
+    }
+  }
+
   return (
     <div className="min-h-dvh bg-[#fbf8f3] pb-20">
       {/* ── Hero ── */}
@@ -90,6 +129,37 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── Recommended jobs ── */}
+      {recommended.length > 0 && (
+        <section className="px-4 md:px-8 pt-8 pb-2 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto w-full">
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <p className="text-[10px] tracking-[0.2em] text-violet-500 font-bold mb-1">
+                {profile?.name ? `${profile.name}さんに` : "あなたに"} OBSESSED
+              </p>
+              <h2 className="text-lg md:text-2xl font-extrabold text-gray-900">おすすめの求人</h2>
+            </div>
+            <Link href="/search" className="text-[11px] font-bold text-violet-600 hover:underline">
+              もっと見る →
+            </Link>
+          </div>
+          <HorizontalStrip jobs={recommended} />
+        </section>
+      )}
+
+      {/* ── Recently viewed ── */}
+      {recents.length > 0 && (
+        <section className="px-4 md:px-8 py-4 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto w-full">
+          <div className="flex items-end justify-between mb-3">
+            <h2 className="text-lg md:text-2xl font-extrabold text-gray-900">最近見た求人</h2>
+            <Link href="/likes" className="text-[11px] font-bold text-gray-500 hover:text-violet-600">
+              LIKEを見る →
+            </Link>
+          </div>
+          <HorizontalStrip jobs={recents} />
+        </section>
+      )}
 
       {/* ── Founder's note ── */}
       <section className="px-6 pt-10 pb-6 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
@@ -325,6 +395,33 @@ export default function Home() {
       </section>
 
       <BottomNav />
+
+      {profile && (
+        <OnboardingModal
+          open={onboardOpen}
+          profile={profile}
+          onClose={() => setOnboardOpen(false)}
+          onSaved={handleOnboardSaved}
+        />
+      )}
+    </div>
+  );
+}
+
+function HorizontalStrip({ jobs }: { jobs: Job[] }) {
+  return (
+    <div className="-mx-4 md:-mx-8 px-4 md:px-8 overflow-x-auto scrollbar-none">
+      <div className="flex gap-3 md:gap-4 pb-2" style={{ scrollSnapType: "x mandatory" }}>
+        {jobs.map((job) => (
+          <div
+            key={job.id}
+            className="w-44 md:w-56 shrink-0"
+            style={{ scrollSnapAlign: "start" }}
+          >
+            <JobListCard job={job} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

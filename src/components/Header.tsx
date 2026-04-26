@@ -13,6 +13,8 @@ const ROOT_PAGES = new Set<string>([
   "/baito",
   "/gig",
   "/career",
+  "/search",
+  "/applications",
   "/swipe",
   "/profile",
   "/likes",
@@ -26,6 +28,8 @@ const PAGE_TITLE: Record<string, string> = {
   "/baito": "アルバイト",
   "/gig": "単発バイト",
   "/career": "正社員",
+  "/search": "検索",
+  "/applications": "応募管理",
 };
 
 /** Tabs rendered inline in the header on desktop (md+). */
@@ -118,6 +122,20 @@ export default function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-0.5">
+          <Link
+            href="/search"
+            aria-label="検索"
+            onClick={() => haptic("tick")}
+            className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-colors ${
+              pathname === "/search"
+                ? "text-violet-600 bg-violet-50"
+                : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </Link>
           <Link
             href="/notifications"
             aria-label="お知らせ"

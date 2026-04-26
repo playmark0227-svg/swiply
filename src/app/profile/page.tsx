@@ -1,12 +1,33 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import { getProfile, saveProfile } from "@/lib/services/profile";
 import { UserProfile, defaultProfile } from "@/types/profile";
+import { getApplications, type Application } from "@/lib/services/applications";
 import { useToast } from "@/components/Toast";
 import { haptic } from "@/lib/haptic";
+
+function computeCompleteness(p: UserProfile): { percent: number; missing: string[] } {
+  const checks = [
+    { label: "名前", ok: !!p.name },
+    { label: "年齢", ok: !!p.age },
+    { label: "居住地", ok: !!p.location },
+    { label: "自己紹介", ok: !!p.selfIntro && p.selfIntro.length >= 20 },
+    { label: "スキル", ok: p.skills.length > 0 },
+    { label: "趣味", ok: p.hobbies.length > 0 },
+    { label: "学歴", ok: !!p.education },
+    { label: "希望カテゴリ", ok: p.desiredCategories.length > 0 },
+    { label: "写真", ok: !!p.photo },
+  ];
+  const ok = checks.filter((c) => c.ok).length;
+  return {
+    percent: Math.round((ok / checks.length) * 100),
+    missing: checks.filter((c) => !c.ok).map((c) => c.label),
+  };
+}
 
 const HOBBY_OPTIONS = [
   "読書", "映画鑑賞", "音楽", "旅行", "料理", "スポーツ",
@@ -27,11 +48,16 @@ export default function ProfilePage() {
   const [editingHobbies, setEditingHobbies] = useState(false);
   const [editingSkills, setEditingSkills] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [apps, setApps] = useState<Application[]>([]);
   const toast = useToast();
 
   useEffect(() => {
     getProfile().then(setProfile);
+    getApplications().then(setApps);
   }, []);
+
+  const completeness = useMemo(() => computeCompleteness(profile), [profile]);
+  const activeApps = apps.filter((a) => a.status !== "withdrawn" && a.status !== "rejected");
 
   function handleChange(field: keyof UserProfile, value: string) {
     setProfile((prev) => ({ ...prev, [field]: value }));
@@ -70,7 +96,67 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-dvh bg-gray-50/50">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-5 md:pt-10 pb-32 md:pb-28">
-        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-5 md:mb-7">プロフィール</h1>
+        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-4">マイページ</h1>
+
+        {/* Dashboard card */}
+        <div className="mb-5 rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white p-4 md:p-5 shadow-lg shadow-violet-200/60">
+          <div className="flex items-end justify-between mb-3">
+            <div>
+              <p className="text-[10px] tracking-[0.2em] font-bold opacity-80">PROFILE STRENGTH</p>
+              <p className="text-3xl md:text-4xl font-black tabular-nums leading-none mt-1">
+                {completeness.percent}<span className="text-base">%</span>
+              </p>
+            </div>
+            <p className="text-[11px] opacity-80 max-w-[60%] text-right leading-relaxed">
+              {completeness.percent === 100
+                ? "完璧。応募準備バッチリ。"
+                : `あと${completeness.missing.length}項目で完成`}
+            </p>
+          </div>
+          <div className="h-2 rounded-full bg-white/25 overflow-hidden">
+            <div
+              className="h-full bg-white rounded-full transition-all"
+              style={{ width: `${completeness.percent}%` }}
+            />
+          </div>
+          {completeness.missing.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-3">
+              {completeness.missing.slice(0, 4).map((m) => (
+                <span key={m} className="text-[10px] font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                  + {m}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Quick links */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <Link
+            href="/applications"
+            className="flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 p-3 hover:border-violet-200 hover:shadow-sm transition"
+          >
+            <p className="text-[10px] text-gray-400 font-bold">応募中</p>
+            <p className="text-xl font-black text-gray-900 tabular-nums">{activeApps.length}</p>
+            <p className="text-[10px] text-violet-500 font-bold mt-0.5">応募管理 →</p>
+          </Link>
+          <Link
+            href="/likes"
+            className="flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 p-3 hover:border-pink-200 hover:shadow-sm transition"
+          >
+            <p className="text-[10px] text-gray-400 font-bold">LIKE</p>
+            <p className="text-xl font-black text-gray-900 tabular-nums">—</p>
+            <p className="text-[10px] text-pink-500 font-bold mt-0.5">一覧を見る →</p>
+          </Link>
+          <Link
+            href="/notifications"
+            className="flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 p-3 hover:border-amber-200 hover:shadow-sm transition"
+          >
+            <p className="text-[10px] text-gray-400 font-bold">お知らせ</p>
+            <p className="text-xl font-black text-gray-900 tabular-nums">●</p>
+            <p className="text-[10px] text-amber-600 font-bold mt-0.5">確認する →</p>
+          </Link>
+        </div>
 
         {/* Photo section */}
         <div className="flex flex-col items-center mb-6">
@@ -276,9 +362,10 @@ export default function ProfilePage() {
             <label className="block text-[11px] font-bold text-gray-500 mb-1.5">希望雇用形態</label>
             <div className="flex gap-2">
               {([
-                { value: "baito", label: "アルバイト" },
+                { value: "baito", label: "バイト" },
+                { value: "gig", label: "単発" },
                 { value: "career", label: "正社員" },
-                { value: "both", label: "どちらも" },
+                { value: "both", label: "ぜんぶ" },
               ] as const).map((option) => (
                 <button
                   key={option.value}

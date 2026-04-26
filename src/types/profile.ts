@@ -7,10 +7,17 @@ export interface UserProfile {
   hobbies: string[];
   skills: string[];
   location: string;
-  desiredJobType: "baito" | "career" | "both";
+  desiredJobType: "baito" | "career" | "gig" | "both";
   desiredLocations: string[];
+  desiredCategories: string[];
+  desiredMinSalary: string;
+  desiredDays: string;
   experience: string;
   education: string;
+  /** Whether the user has completed onboarding. */
+  onboarded: boolean;
+  /** Email/notification opt-ins. */
+  notifyNewMatches: boolean;
 }
 
 export const defaultProfile: UserProfile = {
@@ -24,6 +31,11 @@ export const defaultProfile: UserProfile = {
   location: "",
   desiredJobType: "both",
   desiredLocations: [],
+  desiredCategories: [],
+  desiredMinSalary: "",
+  desiredDays: "",
   experience: "",
   education: "",
+  onboarded: false,
+  notifyNewMatches: true,
 };
