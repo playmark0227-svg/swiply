@@ -145,9 +145,9 @@ export default function VerifyPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-lg md:max-w-2xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20">
-        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-1">本人確認</h1>
-        <p className="text-[12px] text-gray-500 mb-5">
+      <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20">
+        <h1 className="text-lg md:text-3xl font-extrabold text-gray-900 mb-1">本人確認</h1>
+        <p className="text-[12px] md:text-sm text-gray-500 mb-5 md:mb-7">
           安心して応募・採用につなげるための eKYC
         </p>
 

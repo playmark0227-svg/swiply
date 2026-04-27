@@ -114,10 +114,10 @@ export default function NotificationsPage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50">
       <Header />
-      <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20 md:pb-16">
+      <main className="flex-1 max-w-lg md:max-w-4xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20 md:pb-16">
         <div className="flex items-end justify-between mb-4 md:mb-6">
           <div>
-            <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">お知らせ</h1>
+            <h1 className="text-lg md:text-3xl font-extrabold text-gray-900">お知らせ</h1>
             <p className="text-[11px] text-gray-400 mt-0.5">
               全{items.length}件 ／ 未読 {unread}件
             </p>

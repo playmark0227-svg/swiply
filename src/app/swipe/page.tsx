@@ -16,7 +16,12 @@ export default function SwipePage() {
     getJobsByType(jobType).then(setJobs);
   }, [jobType]);
 
-  const typeLabel = jobType === "baito" ? "アルバイト" : "正社員";
+  const TYPE_OPTIONS: { value: JobType; label: string }[] = [
+    { value: "baito", label: "アルバイト" },
+    { value: "gig", label: "単発バイト" },
+    { value: "career", label: "正社員" },
+  ];
+  const typeLabel = TYPE_OPTIONS.find((t) => t.value === jobType)?.label ?? "";
 
   return (
     <div className="swipe-page flex flex-col h-dvh bg-gray-50">
@@ -50,27 +55,23 @@ export default function SwipePage() {
             {dropdownOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden min-w-[140px]">
-                  <button
-                    onClick={() => { setJobType("baito"); setDropdownOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                      jobType === "baito"
-                        ? "bg-violet-50 text-violet-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    アルバイト
-                  </button>
-                  <button
-                    onClick={() => { setJobType("career"); setDropdownOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
-                      jobType === "career"
-                        ? "bg-violet-50 text-violet-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    正社員
-                  </button>
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden min-w-[160px]">
+                  {TYPE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => {
+                        setJobType(opt.value);
+                        setDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-xs font-bold transition-colors ${
+                        jobType === opt.value
+                          ? "bg-violet-50 text-violet-600"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </>
             )}
@@ -92,7 +93,7 @@ export default function SwipePage() {
 
           {/* Card area */}
           <div className="relative flex-1 min-w-0 h-full">
-            <div className="h-full mx-auto p-2 md:py-6 md:px-4 max-w-lg md:max-w-md lg:max-w-lg">
+            <div className="h-full mx-auto p-2 md:py-6 md:px-4 max-w-lg md:max-w-[420px] lg:max-w-[440px] xl:max-w-[480px]">
               <SwipeDeck key={jobType} jobs={jobs} />
             </div>
           </div>

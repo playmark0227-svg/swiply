@@ -167,24 +167,24 @@ export default function Home() {
       )}
 
       {/* ── Founder's note ── */}
-      <section className="px-6 pt-10 pb-6 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
-        <p className="text-[11px] text-gray-400 mb-3">— はじめに、少しだけ。</p>
-        <p className="text-[15px] text-gray-800 leading-[1.9] font-medium">
+      <section className="px-6 pt-10 md:pt-16 pb-6 max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto">
+        <p className="text-[11px] md:text-xs text-gray-400 mb-3">— はじめに、少しだけ。</p>
+        <p className="text-[15px] md:text-[17px] text-gray-800 leading-[1.9] font-medium">
           正直、<span className="bg-yellow-100 px-1">就活サイトってどれも似てる</span>と思ってた。
           長いプロフィール、終わらないスクロール、「あなたへのおすすめ」と言いながら全然刺さらない求人。
         </p>
-        <p className="text-[15px] text-gray-800 leading-[1.9] font-medium mt-4">
+        <p className="text-[15px] md:text-[17px] text-gray-800 leading-[1.9] font-medium mt-4">
           だから作った。<br />
           写真を見て、1秒で「いいな」って思える方を選ぶ。
           それだけで仕事って見つかるんじゃないか、っていう実験。
         </p>
-        <p className="text-[15px] text-gray-800 leading-[1.9] font-medium mt-4">
+        <p className="text-[15px] md:text-[17px] text-gray-800 leading-[1.9] font-medium mt-4">
           使ってみて、もし合わなかったらごめんなさい。
           でも、たぶん、思ってるより気楽に探せる。
         </p>
         <div className="mt-6 flex items-center gap-3">
           <div
-            className="text-xl text-gray-600"
+            className="text-xl md:text-2xl text-gray-600"
             style={{ fontFamily: '"Caveat", "Segoe Script", cursive' }}
           >
             — SWIPLY 運営チーム
@@ -200,13 +200,13 @@ export default function Home() {
       </div>
 
       {/* ── Why swipe (text-heavy, no emoji cards) ── */}
-      <section className="px-6 py-8 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
-        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 leading-tight mb-6">
+      <section className="px-6 py-8 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto">
+        <h2 className="text-[22px] md:text-[40px] lg:text-[48px] font-black text-gray-900 leading-tight mb-6 md:mb-10">
           スワイプ式の、<br />
           ちょっと真面目な話。
         </h2>
 
-        <div className="space-y-7">
+        <div className="space-y-7 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
           <div>
             <div className="flex items-baseline gap-3 mb-1.5">
               <span className="text-[11px] font-black text-violet-600 tabular-nums">01 /</span>
@@ -302,56 +302,59 @@ export default function Home() {
       </section>
 
       {/* ── Voices: magazine-style, asymmetric ── */}
-      <section className="px-6 py-10 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto">
-        <p className="text-[11px] text-gray-400 mb-1">使ってくれた人たち</p>
-        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 mb-6">
+      <section className="px-6 py-10 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto">
+        <p className="text-[11px] md:text-xs text-gray-400 mb-1">使ってくれた人たち</p>
+        <h2 className="text-[22px] md:text-[40px] lg:text-[48px] font-black text-gray-900 mb-6 md:mb-10">
           実際、どうだったか。
         </h2>
 
-        {/* Voice 1 — left aligned, with quote mark */}
-        <div className="mb-8">
-          <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
-          <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
-            月曜の授業サボって電車でスワイプしてたら、渋谷のカフェに受かってた。
-            今はラテアート練習中です。店長、怒ってないといいな。
-          </p>
-          <p className="text-[11px] text-gray-500 mt-4">
-            — さくらさん・大学3年（文学部）・埼玉
-          </p>
-        </div>
+        <div className="md:grid md:grid-cols-3 md:gap-6">
+          {/* Voice 1 — left aligned, with quote mark */}
+          <div className="mb-8 md:mb-0 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6">
+            <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
+            <p className="text-[15px] md:text-[15px] text-gray-800 leading-[1.8] font-medium">
+              月曜の授業サボって電車でスワイプしてたら、渋谷のカフェに受かってた。
+              今はラテアート練習中です。店長、怒ってないといいな。
+            </p>
+            <p className="text-[11px] text-gray-500 mt-4">
+              — さくらさん・大学3年（文学部）・埼玉
+            </p>
+          </div>
 
-        <div className="h-px bg-gray-200 my-6" />
+          <div className="h-px bg-gray-200 my-6 md:hidden" />
 
-        {/* Voice 2 — indented right, different rhythm */}
-        <div className="mb-8 pl-6 border-l-2 border-violet-300">
-          <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
-            転職サイト5つ登録して疲れた勢いでDLした。結果的にここ経由で決まった。
-            写真が多いから「ここで働く自分」が想像できるのが大きい。
-          </p>
-          <p className="text-[11px] text-gray-500 mt-4">
-            — けんたろうさん・28歳・前職Webデザイナー
-          </p>
-        </div>
+          {/* Voice 2 — indented right on mobile, card on desktop */}
+          <div className="mb-8 md:mb-0 pl-6 md:pl-0 border-l-2 md:border-l-0 border-violet-300 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6 md:relative md:top-6">
+            <p className="text-4xl text-gray-300 font-serif leading-none mb-2 hidden md:block">&ldquo;</p>
+            <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
+              転職サイト5つ登録して疲れた勢いでDLした。結果的にここ経由で決まった。
+              写真が多いから「ここで働く自分」が想像できるのが大きい。
+            </p>
+            <p className="text-[11px] text-gray-500 mt-4">
+              — けんたろうさん・28歳・前職Webデザイナー
+            </p>
+          </div>
 
-        <div className="h-px bg-gray-200 my-6" />
+          <div className="h-px bg-gray-200 my-6 md:hidden" />
 
-        {/* Voice 3 */}
-        <div>
-          <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
-          <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
-            子育て中でもスキマ時間にサクサク見られる。週2OKの事務が見つかって、
-            半年ぶりに自分の時間ができた気がする。
-          </p>
-          <p className="text-[11px] text-gray-500 mt-4">
-            — ゆいさん・32歳・2児の母・千葉
-          </p>
+          {/* Voice 3 */}
+          <div className="md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6">
+            <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
+            <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
+              子育て中でもスキマ時間にサクサク見られる。週2OKの事務が見つかって、
+              半年ぶりに自分の時間ができた気がする。
+            </p>
+            <p className="text-[11px] text-gray-500 mt-4">
+              — ゆいさん・32歳・2児の母・千葉
+            </p>
+          </div>
         </div>
       </section>
 
       {/* ── FAQ-ish small text section ── */}
-      <section className="px-6 py-8 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto bg-white border-y border-gray-900/5">
-        <p className="text-[11px] text-gray-400 mb-4">よく聞かれること</p>
-        <dl className="space-y-4 text-[13px]">
+      <section className="px-6 py-8 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto bg-white border-y border-gray-900/5">
+        <p className="text-[11px] md:text-xs text-gray-400 mb-4 md:mb-6">よく聞かれること</p>
+        <dl className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-8 text-[13px] md:text-sm">
           <div>
             <dt className="font-bold text-gray-900 mb-1">Q. 本当に無料ですか？</dt>
             <dd className="text-gray-600 leading-relaxed">
@@ -374,22 +377,22 @@ export default function Home() {
       </section>
 
       {/* ── Final CTA: quiet, not shouty ── */}
-      <section className="px-6 py-12 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto text-center">
-        <p className="text-[11px] text-gray-400 mb-3">よかったら、はじめてみてください。</p>
-        <h2 className="text-[22px] md:text-[34px] font-black text-gray-900 leading-tight mb-6">
+      <section className="px-6 py-12 md:py-20 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto text-center">
+        <p className="text-[11px] md:text-xs text-gray-400 mb-3">よかったら、はじめてみてください。</p>
+        <h2 className="text-[22px] md:text-[44px] lg:text-[52px] font-black text-gray-900 leading-tight mb-6 md:mb-8">
           気になる企業に、<br />
-          <span className="underline decoration-yellow-300 decoration-4 underline-offset-2">
+          <span className="underline decoration-yellow-300 decoration-4 md:decoration-[6px] underline-offset-2">
             スワイプ しよう
           </span>
           。
         </h2>
         <Link
           href="/swipe"
-          className="inline-block px-10 py-4 bg-gray-900 text-white font-black text-sm rounded-full active:scale-[0.97] transition"
+          className="inline-block px-10 md:px-14 py-4 md:py-5 bg-gray-900 text-white font-black text-sm md:text-base rounded-full active:scale-[0.97] hover:scale-[1.02] transition"
         >
           スワイプをはじめる
         </Link>
-        <p className="text-[10px] text-gray-400 mt-4">
+        <p className="text-[10px] md:text-xs text-gray-400 mt-4">
           登録2分 ／ 履歴書不要 ／ いつでも退会OK
         </p>
 

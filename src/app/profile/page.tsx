@@ -106,11 +106,15 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col min-h-dvh bg-gray-50/50">
       <Header />
-      <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-5 md:pt-10 pb-32 md:pb-28">
-        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-4">マイページ</h1>
+      <main className="flex-1 max-w-lg md:max-w-6xl mx-auto w-full px-4 md:px-8 pt-5 md:pt-10 pb-32 md:pb-28">
+        <h1 className="text-lg md:text-3xl font-extrabold text-gray-900 mb-4 md:mb-6">マイページ</h1>
+
+        <div className="md:grid md:grid-cols-3 md:gap-8">
+        {/* Left column on desktop = sticky summary; on mobile = first */}
+        <div className="md:col-span-1 md:order-2 md:sticky md:top-20 md:self-start md:space-y-4">
 
         {/* Dashboard card */}
-        <div className="mb-5 rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white p-4 md:p-5 shadow-lg shadow-violet-200/60">
+        <div className="mb-5 md:mb-0 rounded-3xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white p-4 md:p-5 shadow-lg shadow-violet-200/60">
           <div className="flex items-end justify-between mb-3">
             <div>
               <p className="text-[10px] tracking-[0.2em] font-bold opacity-80">PROFILE STRENGTH</p>
@@ -197,7 +201,7 @@ export default function ProfilePage() {
         </Link>
 
         {/* Quick links */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-6 md:mb-0">
           <Link
             href="/applications"
             className="flex flex-col items-center justify-center bg-white rounded-2xl border border-gray-100 p-3 hover:border-violet-200 hover:shadow-sm transition"
@@ -223,6 +227,10 @@ export default function ProfilePage() {
             <p className="text-[10px] text-amber-600 font-bold mt-0.5">確認する →</p>
           </Link>
         </div>
+
+        </div>
+        {/* Right column on desktop = form */}
+        <div className="md:col-span-2 md:order-1">
 
         {/* Photo section */}
         <div className="flex flex-col items-center mb-6">
@@ -266,12 +274,20 @@ export default function ProfilePage() {
           {/* Basic info */}
           <SectionTitle>基本情報</SectionTitle>
 
-          <InputField
-            label="名前"
-            placeholder="山田 太郎"
-            value={profile.name}
-            onChange={(v) => handleChange("name", v)}
-          />
+          <div className="grid md:grid-cols-2 gap-3">
+            <InputField
+              label="名前"
+              placeholder="山田 太郎"
+              value={profile.name}
+              onChange={(v) => handleChange("name", v)}
+            />
+            <InputField
+              label="居住地"
+              placeholder="東京都渋谷区"
+              value={profile.location}
+              onChange={(v) => handleChange("location", v)}
+            />
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <InputField
@@ -296,13 +312,6 @@ export default function ProfilePage() {
               </select>
             </div>
           </div>
-
-          <InputField
-            label="居住地"
-            placeholder="東京都渋谷区"
-            value={profile.location}
-            onChange={(v) => handleChange("location", v)}
-          />
 
           {/* Self intro */}
           <SectionTitle>自己紹介</SectionTitle>
@@ -501,14 +510,16 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+        </div>
+        </div>
       </main>
 
       {/* Save button - above bottom nav */}
-      <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/50 px-5 py-2.5 md:py-3">
-        <div className="max-w-lg md:max-w-3xl mx-auto">
+      <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100/50 px-5 py-2.5 md:py-3 z-40">
+        <div className="max-w-lg md:max-w-6xl mx-auto md:flex md:justify-end">
           <button
             onClick={handleSave}
-            className={`w-full h-11 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] ${
+            className={`w-full md:w-auto md:px-10 h-11 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] ${
               saved
                 ? "bg-emerald-500 text-white"
                 : "bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white shadow-lg shadow-violet-200"
