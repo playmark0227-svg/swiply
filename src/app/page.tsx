@@ -102,6 +102,13 @@ export default function Home() {
                 <Link href="/gig" className="underline underline-offset-4 hover:text-white transition">単発を見る</Link>
                 <Link href="/career" className="underline underline-offset-4 hover:text-white transition">正社員を見る</Link>
               </div>
+              <Link
+                href="/business"
+                className="inline-flex items-center gap-1.5 mt-4 md:mt-6 text-[10px] md:text-[11px] text-white/40 hover:text-white/80 transition"
+              >
+                <span>採用ご担当の方はこちら</span>
+                <span className="text-cyan-300">SWIPLY for Business →</span>
+              </Link>
             </div>
           </div>
         </div>
