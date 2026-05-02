@@ -36,6 +36,9 @@ export default function FilterSheet({
   const [draft, setDraft] = useState<JobFilters>(initial);
 
   useEffect(() => {
+    // Reset the draft each time the sheet (re)opens with a new initial
+    // value. Legitimate external→internal sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (open) setDraft(initial);
   }, [open, initial]);
 

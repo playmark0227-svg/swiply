@@ -16,7 +16,8 @@ import {
 import { findSimilar } from "@/lib/services/recommendations";
 import { pushRecentlyViewed } from "@/lib/services/recentlyViewed";
 import { isNew } from "@/lib/services/search";
-import ApplyModal from "@/components/ApplyModal";
+import dynamic from "next/dynamic";
+const ApplyModal = dynamic(() => import("@/components/ApplyModal"), { ssr: false });
 import JobListCard from "@/components/JobListCard";
 import { Job } from "@/types/job";
 import { useToast } from "@/components/Toast";

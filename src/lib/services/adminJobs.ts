@@ -58,8 +58,33 @@ function writeDeleted(d: string[]): void {
   localStorage.setItem(DELETED_KEY, JSON.stringify(d));
 }
 
+/**
+ * In-memory cache of the merged list. Storage events from other tabs and
+ * explicit `invalidateMergedJobs()` calls (after an admin write) bust it.
+ * Avoids repeated JSON.parse on every getMergedJobs invocation.
+ */
+let cachedMerged: Job[] | null = null;
+
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (
+      e.key === OVERRIDES_KEY ||
+      e.key === NEW_JOBS_KEY ||
+      e.key === DELETED_KEY
+    ) {
+      cachedMerged = null;
+    }
+  });
+}
+
+function invalidateMergedJobs() {
+  cachedMerged = null;
+}
+
 /** Returns the merged jobs list (static seed + admin additions − deletions, with overrides applied). */
 export function getMergedJobs(): Job[] {
+  if (cachedMerged) return cachedMerged;
+
   const overrides = readOverrides();
   const newJobs = readNewJobs();
   const deleted = new Set(readDeleted());
@@ -73,6 +98,7 @@ export function getMergedJobs(): Job[] {
     if (deleted.has(j.id)) continue;
     merged.push({ ...j, ...(overrides[j.id] ?? {}) });
   }
+  cachedMerged = merged;
   return merged;
 }
 
@@ -80,6 +106,7 @@ export function updateJob(id: string, patch: Partial<Job>): void {
   const overrides = readOverrides();
   overrides[id] = { ...(overrides[id] ?? {}), ...patch };
   writeOverrides(overrides);
+  invalidateMergedJobs();
 }
 
 export function deleteJob(id: string): void {
@@ -87,18 +114,21 @@ export function deleteJob(id: string): void {
   if (!deleted.includes(id)) {
     deleted.push(id);
     writeDeleted(deleted);
+    invalidateMergedJobs();
   }
 }
 
 export function restoreJob(id: string): void {
   const deleted = readDeleted().filter((d) => d !== id);
   writeDeleted(deleted);
+  invalidateMergedJobs();
 }
 
 export function createJob(job: Job): void {
   const list = readNewJobs();
   list.push(job);
   writeNewJobs(list);
+  invalidateMergedJobs();
 }
 
 export function deleteAdminJob(id: string): void {
@@ -109,6 +139,7 @@ export function deleteAdminJob(id: string): void {
   const ov = readOverrides();
   delete ov[id];
   writeOverrides(ov);
+  invalidateMergedJobs();
 }
 
 export function isJobDeleted(id: string): boolean {
@@ -125,6 +156,7 @@ export function resetJobs(): void {
   localStorage.removeItem(OVERRIDES_KEY);
   localStorage.removeItem(NEW_JOBS_KEY);
   localStorage.removeItem(DELETED_KEY);
+  invalidateMergedJobs();
 }
 
 export function makeNewJobId(prefix: string = "admin"): string {

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { ReactNode } from "react";
+import { memo, ReactNode } from "react";
 
 interface SwipeCardProps {
   children: ReactNode;
@@ -18,7 +18,7 @@ interface SwipeCardProps {
 const SWIPE_THRESHOLD = 100;
 const SWIPE_UP_THRESHOLD = 80;
 
-export default function SwipeCard({
+function SwipeCardImpl({
   children,
   onSwipeLeft,
   onSwipeRight,
@@ -101,3 +101,6 @@ export default function SwipeCard({
     </motion.div>
   );
 }
+
+const SwipeCard = memo(SwipeCardImpl);
+export default SwipeCard;

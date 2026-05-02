@@ -1,15 +1,19 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
-
 /**
  * Firebase configuration is read from NEXT_PUBLIC_FIREBASE_* env vars.
  * If any required key is missing, `firebaseEnabled` is false and all
  * services fall back to localStorage / static data.
  *
- * Set the env vars in `.env.local` (see `.env.local.example`) to enable.
+ * IMPORTANT: every firebase module is dynamically imported behind the
+ * `firebaseEnabled` flag. When the env vars are absent the constant is
+ * statically `false` and the bundler dead-code-eliminates the entire
+ * firebase tree (~150KB+ saved on the static GitHub Pages build).
  */
+
+import type { FirebaseApp } from "firebase/app";
+import type { Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
+import type { FirebaseStorage } from "firebase/storage";
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -28,36 +32,40 @@ let authInstance: Auth | null = null;
 let dbInstance: Firestore | null = null;
 let storageInstance: FirebaseStorage | null = null;
 
-function ensureApp(): FirebaseApp | null {
-  if (!firebaseEnabled) return null;
+async function ensureApp(): Promise<FirebaseApp | null> {
+  if (!firebaseEnabled || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return null;
   if (app) return app;
+  const { initializeApp, getApps, getApp } = await import("firebase/app");
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
   return app;
 }
 
-export function getFirebaseAuth(): Auth | null {
-  if (!firebaseEnabled) return null;
+export async function getFirebaseAuth(): Promise<Auth | null> {
+  if (!firebaseEnabled || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return null;
   if (authInstance) return authInstance;
-  const a = ensureApp();
+  const a = await ensureApp();
   if (!a) return null;
+  const { getAuth } = await import("firebase/auth");
   authInstance = getAuth(a);
   return authInstance;
 }
 
-export function getDb(): Firestore | null {
-  if (!firebaseEnabled) return null;
+export async function getDb(): Promise<Firestore | null> {
+  if (!firebaseEnabled || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return null;
   if (dbInstance) return dbInstance;
-  const a = ensureApp();
+  const a = await ensureApp();
   if (!a) return null;
+  const { getFirestore } = await import("firebase/firestore");
   dbInstance = getFirestore(a);
   return dbInstance;
 }
 
-export function getFbStorage(): FirebaseStorage | null {
-  if (!firebaseEnabled) return null;
+export async function getFbStorage(): Promise<FirebaseStorage | null> {
+  if (!firebaseEnabled || !process.env.NEXT_PUBLIC_FIREBASE_API_KEY) return null;
   if (storageInstance) return storageInstance;
-  const a = ensureApp();
+  const a = await ensureApp();
   if (!a) return null;
+  const { getStorage } = await import("firebase/storage");
   storageInstance = getStorage(a);
   return storageInstance;
 }

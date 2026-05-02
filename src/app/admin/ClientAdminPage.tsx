@@ -19,7 +19,6 @@ import {
   restoreJob,
   createJob,
   deleteAdminJob,
-  isJobDeleted,
   isJobAdminCreated,
   resetJobs,
   makeNewJobId,
@@ -53,11 +52,13 @@ type Tab =
 // Page entry
 // =================================================================
 export default function ClientAdminPage() {
-  const [authed, setAuthed] = useState<boolean | null>(null); // null = unknown / loading
-
-  useEffect(() => {
-    setAuthed(isAdminAuthenticated());
-  }, []);
+  // Lazy initializer: read auth state synchronously on the client. The
+  // page is dynamically imported via next/dynamic ({ ssr: false }), so
+  // this never runs during static generation.
+  const [authed, setAuthed] = useState<boolean | null>(() => {
+    if (typeof window === "undefined") return null;
+    return isAdminAuthenticated();
+  });
 
   if (authed === null) {
     return <div className="min-h-dvh bg-gray-950" />;
@@ -394,15 +395,17 @@ function QuickAction({ label, onClick }: { label: string; onClick: () => void })
 // Tab: Jobs
 // =================================================================
 function JobsTab() {
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [editing, setEditing] = useState<Job | null>(null);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<"all" | JobType | "deleted">("all");
   const [bump, setBump] = useState(0);
 
-  useEffect(() => {
-    setJobs(getMergedJobs());
-  }, [bump]);
+  // Derive directly via useMemo — re-reads localStorage when `bump` ticks.
+  const jobs = useMemo(
+    () => (typeof window === "undefined" ? [] : getMergedJobs()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bump]
+  );
 
   function refresh() {
     setBump((b) => b + 1);
@@ -551,18 +554,17 @@ function JobsTab() {
 
 function DeletedJobsPanel({ onRestore }: { onRestore: () => void }) {
   const [bump, setBump] = useState(0);
-  const all = useMemo(() => getMergedJobs(), [bump]);
-  void all; // tracking only
+  // Recompute when `bump` changes after a restore.
   const allIds = useMemo(() => {
-    // Show static-IDs that were deleted, by computing diff
-    const merged = new Set(getMergedJobs().map((j) => j.id));
     if (typeof window === "undefined") return [] as string[];
+    const merged = new Set(getMergedJobs().map((j) => j.id));
     try {
       const arr = JSON.parse(localStorage.getItem("swiply-jobs-deleted") ?? "[]") as string[];
       return arr.filter((id) => !merged.has(id));
     } catch {
       return [];
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bump]);
 
   if (allIds.length === 0) return null;
@@ -935,12 +937,12 @@ function ApplicationsTab() {
 // Tab: B2B Leads
 // =================================================================
 function LeadsTab() {
-  const [leads, setLeads] = useState<BusinessLead[]>([]);
   const [bump, setBump] = useState(0);
-
-  useEffect(() => {
-    setLeads(getLocalLeads());
-  }, [bump]);
+  const leads = useMemo<BusinessLead[]>(
+    () => (typeof window === "undefined" ? [] : getLocalLeads()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bump]
+  );
 
   return (
     <div>
@@ -1032,10 +1034,10 @@ function leadsToCsv(leads: BusinessLead[]): string {
 // Tab: Users
 // =================================================================
 function UsersTab() {
-  const [accounts, setAccounts] = useState<ReturnType<typeof getLocalAccounts>>([]);
-  useEffect(() => {
-    setAccounts(getLocalAccounts());
-  }, []);
+  // Read once at mount via lazy initializer.
+  const [accounts] = useState<ReturnType<typeof getLocalAccounts>>(() =>
+    typeof window === "undefined" ? [] : getLocalAccounts()
+  );
 
   return (
     <div>
@@ -1513,8 +1515,6 @@ function ModalShell({
   );
 }
 
-// silence unused
-void isJobDeleted;
 
 // =================================================================
 // Sidebar icons

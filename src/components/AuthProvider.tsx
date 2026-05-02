@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   type AuthSession,
-  getCurrentSession,
   signIn as svcSignIn,
   signOut as svcSignOut,
   signUp as svcSignUp,
@@ -25,12 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setSession(getCurrentSession());
+    // subscribeAuth invokes the handler synchronously with the current
+    // session, so we don't need a separate setSession call before it.
     const unsub = subscribeAuth((s) => {
       setSession(s);
       setLoading(false);
     });
-    setLoading(false);
     return unsub;
   }, []);
 

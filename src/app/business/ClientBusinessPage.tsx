@@ -1,13 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "@/components/Logo";
 import { submitLead } from "@/lib/services/businessLeads";
-
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
 // =================================================================
 // Page entry — composes all sections.
@@ -1252,5 +1249,3 @@ function FooterLink({ href, children }: { href: string; children: React.ReactNod
   );
 }
 
-// silence unused var
-void Image;

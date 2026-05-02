@@ -26,6 +26,10 @@ export default function SearchBar({
   const router = useRouter();
   const [value, setValue] = useState(defaultValue);
 
+  // Sync external defaultValue → internal state when it changes (e.g. URL ?q=
+  // updates due to navigation). This is the documented exception to the
+  // set-state-in-effect rule: mirroring an external source into UI state.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setValue(defaultValue), [defaultValue]);
 
   function submit(e: React.FormEvent) {

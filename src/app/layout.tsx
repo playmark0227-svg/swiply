@@ -12,6 +12,11 @@ const geistSans = Geist({
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NODE_ENV === "production"
+      ? "https://playmark0227-svg.github.io"
+      : "http://localhost:3000"
+  ),
   title: "SWIPLY - 履歴書の前に、スワイプでいい。",
   description:
     "スワイプひとつで、会いたい企業まで最短距離。履歴書も長文応募も要らない、新しい求人の探し方。",

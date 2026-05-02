@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { memo } from "react";
 import { Job } from "@/types/job";
 import { isNew } from "@/lib/services/search";
 
@@ -11,7 +12,7 @@ interface JobListCardProps {
   matchBadge?: string;
 }
 
-export default function JobListCard({ job, matchBadge }: JobListCardProps) {
+function JobListCardImpl({ job, matchBadge }: JobListCardProps) {
   const fresh = isNew(job, 3);
   return (
     <Link href={`/job/${job.id}`} className="block group">
@@ -104,3 +105,10 @@ export default function JobListCard({ job, matchBadge }: JobListCardProps) {
     </Link>
   );
 }
+
+/**
+ * Memoized — `job` is a stable reference from the data layer, so this
+ * skips re-renders when only sibling state (like list filters) changes.
+ */
+const JobListCard = memo(JobListCardImpl);
+export default JobListCard;

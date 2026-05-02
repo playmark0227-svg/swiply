@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import FilterSheet from "./FilterSheet";
+import dynamic from "next/dynamic";
+const FilterSheet = dynamic(() => import("./FilterSheet"), { ssr: false });
 import { SORT_OPTIONS, type JobFilters } from "@/lib/services/search";
 import { haptic } from "@/lib/haptic";
 

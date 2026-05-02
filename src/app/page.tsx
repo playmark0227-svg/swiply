@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import JobListCard from "@/components/JobListCard";
 import Logo from "@/components/Logo";
-import OnboardingModal from "@/components/OnboardingModal";
+import dynamic from "next/dynamic";
+const OnboardingModal = dynamic(() => import("@/components/OnboardingModal"), {
+  ssr: false,
+});
 import { getAllJobs } from "@/lib/services/jobs";
 import { getProfile } from "@/lib/services/profile";
 import { getRecentlyViewedIds } from "@/lib/services/recentlyViewed";

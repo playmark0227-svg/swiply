@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Job } from "@/types/job";
 import { getJobVideo } from "@/lib/services/jobMedia";
 
@@ -10,7 +10,7 @@ interface JobCardProps {
   active?: boolean;
 }
 
-export default function JobCard({ job, active = true }: JobCardProps) {
+function JobCardImpl({ job, active = true }: JobCardProps) {
   const videoUrl = getJobVideo(job);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
@@ -131,3 +131,6 @@ export default function JobCard({ job, active = true }: JobCardProps) {
     </div>
   );
 }
+
+const JobCard = memo(JobCardImpl);
+export default JobCard;

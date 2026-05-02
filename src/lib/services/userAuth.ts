@@ -11,13 +11,7 @@
  */
 
 import { firebaseEnabled, getFirebaseAuth } from "@/lib/firebase/client";
-import {
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut as fbSignOut,
-  type User,
-} from "firebase/auth";
+import type { User } from "firebase/auth";
 
 const ACCOUNTS_KEY = "swiply-accounts";
 const SESSION_KEY = "swiply-session";
@@ -53,9 +47,10 @@ export async function signUp(
   if (!email || !password) throw new Error("メールアドレスとパスワードを入力してください");
   if (password.length < 6) throw new Error("パスワードは6文字以上で設定してください");
 
-  if (firebaseEnabled) {
-    const auth = getFirebaseAuth();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const auth = await getFirebaseAuth();
     if (auth) {
+      const { createUserWithEmailAndPassword } = await import("firebase/auth");
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       const session: AuthSession = {
         uid: cred.user.uid,
@@ -91,9 +86,10 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
   email = email.trim().toLowerCase();
   if (!email || !password) throw new Error("メールアドレスとパスワードを入力してください");
 
-  if (firebaseEnabled) {
-    const auth = getFirebaseAuth();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const auth = await getFirebaseAuth();
     if (auth) {
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
       const cred = await signInWithEmailAndPassword(auth, email, password);
       const session: AuthSession = {
         uid: cred.user.uid,
@@ -122,9 +118,12 @@ export async function signIn(email: string, password: string): Promise<AuthSessi
 }
 
 export async function signOut(): Promise<void> {
-  if (firebaseEnabled) {
-    const auth = getFirebaseAuth();
-    if (auth) await fbSignOut(auth);
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const auth = await getFirebaseAuth();
+    if (auth) {
+      const { signOut: fbSignOut } = await import("firebase/auth");
+      await fbSignOut(auth);
+    }
   }
   if (typeof window !== "undefined") {
     localStorage.removeItem(SESSION_KEY);
@@ -176,10 +175,14 @@ export function subscribeAuth(handler: (s: AuthSession | null) => void): () => v
   // Immediate.
   handler(getCurrentSession());
 
-  if (firebaseEnabled) {
-    const auth = getFirebaseAuth();
-    if (auth) {
-      return onAuthStateChanged(auth, (u: User | null) => {
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    let cancelled = false;
+    let unsub: (() => void) | null = null;
+    (async () => {
+      const auth = await getFirebaseAuth();
+      if (cancelled || !auth) return;
+      const { onAuthStateChanged } = await import("firebase/auth");
+      unsub = onAuthStateChanged(auth, (u: User | null) => {
         if (u) {
           const s: AuthSession = {
             uid: u.uid,
@@ -192,7 +195,11 @@ export function subscribeAuth(handler: (s: AuthSession | null) => void): () => v
           handler(null);
         }
       });
-    }
+    })();
+    return () => {
+      cancelled = true;
+      unsub?.();
+    };
   }
 
   // localStorage fallback: listen for storage events from other tabs.

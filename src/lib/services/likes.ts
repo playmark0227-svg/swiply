@@ -1,13 +1,5 @@
 import { firebaseEnabled, getDb } from "@/lib/firebase/client";
 import { getCurrentUserId } from "@/lib/services/auth";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
 
 const STORAGE_KEY = "swiply-likes";
 
@@ -22,9 +14,10 @@ const STORAGE_KEY = "swiply-likes";
  */
 
 export async function getLikedJobIds(): Promise<string[]> {
-  if (firebaseEnabled) {
-    const db = getDb();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const db = await getDb();
     if (db) {
+      const { collection, getDocs } = await import("firebase/firestore");
       const uid = await getCurrentUserId();
       const snap = await getDocs(collection(db, "users", uid, "likes"));
       return snap.docs.map((d) => d.id);
@@ -34,9 +27,10 @@ export async function getLikedJobIds(): Promise<string[]> {
 }
 
 export async function addLike(jobId: string): Promise<void> {
-  if (firebaseEnabled) {
-    const db = getDb();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const db = await getDb();
     if (db) {
+      const { doc, setDoc, serverTimestamp } = await import("firebase/firestore");
       const uid = await getCurrentUserId();
       await setDoc(doc(db, "users", uid, "likes", jobId), {
         jobId,
@@ -53,9 +47,10 @@ export async function addLike(jobId: string): Promise<void> {
 }
 
 export async function removeLike(jobId: string): Promise<void> {
-  if (firebaseEnabled) {
-    const db = getDb();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const db = await getDb();
     if (db) {
+      const { doc, deleteDoc } = await import("firebase/firestore");
       const uid = await getCurrentUserId();
       await deleteDoc(doc(db, "users", uid, "likes", jobId));
       return;

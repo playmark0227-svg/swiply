@@ -7,7 +7,6 @@
  */
 
 import { firebaseEnabled, getDb } from "@/lib/firebase/client";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 
 const STORAGE_KEY = "swiply-business-leads";
 
@@ -34,10 +33,13 @@ export async function submitLead(
   };
 
   // Optional: ship to Firestore when configured.
-  if (firebaseEnabled) {
-    const db = getDb();
+  if (firebaseEnabled && process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    const db = await getDb();
     if (db) {
       try {
+        const { addDoc, collection, serverTimestamp } = await import(
+          "firebase/firestore"
+        );
         await addDoc(collection(db, "businessLeads"), {
           ...lead,
           createdAt: serverTimestamp(),
