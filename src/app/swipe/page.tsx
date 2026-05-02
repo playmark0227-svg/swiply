@@ -8,7 +8,7 @@ import { getJobsByType } from "@/lib/services/jobs";
 import type { Job, JobType } from "@/types/job";
 
 export default function SwipePage() {
-  const [jobType, setJobType] = useState<JobType>("baito");
+  const [jobType, setJobType] = useState<JobType>("career");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
