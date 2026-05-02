@@ -119,12 +119,6 @@ export default function Home() {
 
       {/* ── Quick stats strip ── */}
       <section className="relative border-y border-gray-900/10 bg-white">
-        <div className="absolute top-2 right-3 md:top-3 md:right-5 flex items-center gap-1 opacity-70">
-          <Logo size={14} radius={4} />
-          <span className="text-[8px] md:text-[9px] font-black tracking-[0.2em] text-gray-400">
-            SWIPLY
-          </span>
-        </div>
         <div className="max-w-lg md:max-w-5xl mx-auto px-5 md:px-8 py-5 md:py-8 flex items-center justify-between">
           <div>
             <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">12,347</p>

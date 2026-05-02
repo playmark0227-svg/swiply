@@ -274,7 +274,7 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
       {/* Main */}
       <main className="flex-1 min-w-0">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-4 md:px-8 h-14 flex items-center justify-between">
+        <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-gray-100 px-4 md:px-8 lg:px-10 h-14 md:h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setNavOpen(true)}
@@ -285,17 +285,22 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <h1 className="text-base md:text-lg font-extrabold text-gray-900">
+            <h1 className="text-base md:text-xl lg:text-2xl font-extrabold text-gray-900 tracking-tight">
               {tabs.find((t) => t.id === tab)?.label}
             </h1>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-bold text-emerald-700">DEMO</span>
+          <div className="flex items-center gap-2">
+            <span className="hidden md:inline text-[11px] text-gray-400">
+              ViFight Console
+            </span>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-700">DEMO</span>
+            </div>
           </div>
         </header>
 
-        <div className="px-4 md:px-8 py-6 md:py-8">
+        <div className="px-4 md:px-8 lg:px-10 py-6 md:py-8 max-w-[1600px] mx-auto w-full">
           {tab === "dashboard" && <DashboardTab onJump={setTab} />}
           {tab === "jobs" && <JobsTab />}
           {tab === "applications" && <ApplicationsTab />}
@@ -343,26 +348,26 @@ function DashboardTab({ onJump }: { onJump: (tab: Tab) => void }) {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div className="space-y-6 md:space-y-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
         {cards.map((c) => (
           <button
             key={c.label}
             onClick={() => onJump(c.jump)}
-            className="text-left bg-white border border-gray-100 rounded-2xl p-4 hover:shadow-md hover:border-blue-100 transition active:scale-[0.99]"
+            className="text-left bg-white border border-gray-100 rounded-2xl p-4 md:p-5 hover:shadow-md hover:border-blue-100 transition active:scale-[0.99]"
           >
-            <p className="text-[10px] font-bold text-gray-500 mb-1">{c.label}</p>
-            <p className="text-2xl md:text-3xl font-black tabular-nums text-gray-900">
+            <p className="text-[10px] md:text-[11px] font-bold text-gray-500 mb-1">{c.label}</p>
+            <p className="text-2xl md:text-4xl font-black tabular-nums text-gray-900 leading-none">
               {c.value}
             </p>
-            <p className="text-[10px] text-blue-500 font-bold mt-1.5">詳細を見る →</p>
+            <p className="text-[10px] md:text-[11px] text-blue-500 font-bold mt-2 md:mt-3">詳細を見る →</p>
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6">
-        <h2 className="text-sm font-extrabold text-gray-900 mb-3">クイックアクション</h2>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 lg:p-7">
+        <h2 className="text-sm md:text-base font-extrabold text-gray-900 mb-3 md:mb-4">クイックアクション</h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-3">
           <QuickAction label="新しい求人を作成" onClick={() => onJump("jobs")} />
           <QuickAction label="応募ステータスを更新" onClick={() => onJump("applications")} />
           <QuickAction label="リードを確認" onClick={() => onJump("leads")} />
@@ -370,7 +375,7 @@ function DashboardTab({ onJump }: { onJump: (tab: Tab) => void }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 text-[12px] text-gray-600 leading-relaxed">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 text-[12px] md:text-[13px] text-gray-600 leading-relaxed">
         <p className="font-extrabold text-gray-900 mb-2">⚠ デモ環境について</p>
         <p>
           このコンソールは静的サイト（GitHub Pages）上で動作するため、データはあなたのブラウザの localStorage にのみ保存されます。複数の運営者で同じデータを共有するには、Firestore / Supabase 等のバックエンド連携が必要です。

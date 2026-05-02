@@ -72,10 +72,11 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const normalized = pathname === "/" ? "/" : pathname.replace(/\/$/, "");
 
   function isActive(tab: (typeof tabs)[number]) {
-    if ("exact" in tab && tab.exact) return pathname === tab.href;
-    return pathname === tab.href || pathname.startsWith(tab.href + "/");
+    if ("exact" in tab && tab.exact) return normalized === tab.href;
+    return normalized === tab.href || normalized.startsWith(tab.href + "/");
   }
 
   return (

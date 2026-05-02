@@ -48,12 +48,15 @@ const DESKTOP_TABS = [
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const isRoot = ROOT_PAGES.has(pathname);
-  const title = PAGE_TITLE[pathname];
+  // `trailingSlash: true` makes pathname end in "/" — normalise so the
+  // ROOT_PAGES / PAGE_TITLE lookups work for every page.
+  const normalized = pathname === "/" ? "/" : pathname.replace(/\/$/, "");
+  const isRoot = ROOT_PAGES.has(normalized);
+  const title = PAGE_TITLE[normalized];
 
   function isTabActive(tab: (typeof DESKTOP_TABS)[number]) {
-    if (tab.exact) return pathname === tab.href;
-    return pathname === tab.href || pathname.startsWith(tab.href + "/");
+    if (tab.exact) return normalized === tab.href;
+    return normalized === tab.href || normalized.startsWith(tab.href + "/");
   }
 
   return (
@@ -145,7 +148,7 @@ export default function Header() {
             aria-label="検索"
             onClick={() => haptic("tick")}
             className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-colors ${
-              pathname === "/search"
+              normalized === "/search"
                 ? "text-violet-600 bg-violet-50"
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
             }`}
@@ -159,7 +162,7 @@ export default function Header() {
             aria-label="お知らせ"
             onClick={() => haptic("tick")}
             className={`relative w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-colors ${
-              pathname === "/notifications"
+              normalized === "/notifications"
                 ? "text-violet-600 bg-violet-50"
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
             }`}
@@ -175,7 +178,7 @@ export default function Header() {
             aria-label="LIKEした求人"
             onClick={() => haptic("tick")}
             className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-colors ${
-              pathname === "/likes"
+              normalized === "/likes"
                 ? "text-pink-500 bg-pink-50"
                 : "text-gray-400 hover:text-pink-500 hover:bg-pink-50"
             }`}
