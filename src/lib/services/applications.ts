@@ -85,6 +85,38 @@ export async function submitApplication(input: {
   return app;
 }
 
+/**
+ * Admin: forcibly update an application's status (used by the ops console).
+ * Adds an event entry tagged with [admin].
+ */
+export async function adminSetApplicationStatus(
+  applicationId: string,
+  status: ApplicationStatus,
+  note?: string
+): Promise<void> {
+  const list = read();
+  const idx = list.findIndex((a) => a.id === applicationId);
+  if (idx < 0) return;
+  list[idx] = {
+    ...list[idx],
+    status,
+    events: [
+      ...list[idx].events,
+      {
+        at: new Date().toISOString(),
+        status,
+        note: note ?? `[admin] ステータスを${STATUS_LABEL[status]}に変更`,
+      },
+    ],
+  };
+  write(list);
+}
+
+export async function adminDeleteApplication(applicationId: string): Promise<void> {
+  const list = read().filter((a) => a.id !== applicationId);
+  write(list);
+}
+
 export async function withdrawApplication(jobId: string): Promise<void> {
   const list = read();
   const idx = list.findIndex((a) => a.jobId === jobId);

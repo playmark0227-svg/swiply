@@ -1,4 +1,5 @@
 import { jobs as staticJobs } from "@/data/jobs";
+import { getMergedJobs } from "@/lib/services/adminJobs";
 import type { Job, JobType } from "@/types/job";
 
 /**
@@ -32,15 +33,21 @@ import type { Job, JobType } from "@/types/job";
  */
 
 export async function getAllJobs(): Promise<Job[]> {
-  return staticJobs;
+  // At runtime, use the admin-overridden merged list. At build time
+  // (no `window`), fall back to the static seed.
+  return typeof window === "undefined" ? staticJobs : getMergedJobs();
 }
 
 export async function getJobsByType(type: JobType): Promise<Job[]> {
-  return staticJobs.filter((job) => job.type === type);
+  const all =
+    typeof window === "undefined" ? staticJobs : getMergedJobs();
+  return all.filter((job) => job.type === type);
 }
 
 export async function getJobById(id: string): Promise<Job | undefined> {
-  return staticJobs.find((job) => job.id === id);
+  const all =
+    typeof window === "undefined" ? staticJobs : getMergedJobs();
+  return all.find((job) => job.id === id);
 }
 
 /**

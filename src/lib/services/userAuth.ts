@@ -135,6 +135,28 @@ export async function signOut(): Promise<void> {
  * Read current session synchronously from localStorage. Use inside React
  * effects when you don't need to wait for Firebase to settle.
  */
+/**
+ * Admin: list all locally-registered accounts (passwordHash/salt stripped).
+ * Only meaningful for the localStorage fallback — Firebase users live in
+ * Firebase Auth and aren't enumerable from the client.
+ */
+export function getLocalAccounts(): Array<Pick<Account, "uid" | "email" | "displayName" | "createdAt">> {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_KEY);
+    if (!raw) return [];
+    const obj = JSON.parse(raw) as StoredAccounts;
+    return Object.values(obj).map(({ uid, email, displayName, createdAt }) => ({
+      uid,
+      email,
+      displayName,
+      createdAt,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export function getCurrentSession(): AuthSession | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(SESSION_KEY);

@@ -1205,6 +1205,7 @@ function BusinessFooter() {
             <FooterLink href="#">会社概要</FooterLink>
             <FooterLink href="#">採用情報</FooterLink>
             <FooterLink href="#">プレスリリース</FooterLink>
+            <FooterLink href="/admin">運営者ログイン</FooterLink>
           </FooterCol>
         </div>
 
