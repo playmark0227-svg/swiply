@@ -3,6 +3,7 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Job } from "@/types/job";
 import { getJobVideo } from "@/lib/services/jobMedia";
+import { getVideoUrl, isVideoRef } from "@/lib/services/videoStore";
 
 interface JobCardProps {
   job: Job;
@@ -11,11 +12,43 @@ interface JobCardProps {
 }
 
 function JobCardImpl({ job, active = true }: JobCardProps) {
-  const videoUrl = getJobVideo(job);
+  const rawVideoUrl = getJobVideo(job);
+  const [videoUrl, setVideoUrl] = useState<string | null>(
+    isVideoRef(rawVideoUrl) ? null : rawVideoUrl
+  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
   const [muted, setMuted] = useState(true);
+
+  // Resolve idb:// refs to a blob URL on the client. The object URL is
+  // revoked when the component unmounts or the source changes.
+  useEffect(() => {
+    if (!isVideoRef(rawVideoUrl)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setVideoUrl(rawVideoUrl);
+      return;
+    }
+    let cancelled = false;
+    let createdUrl: string | null = null;
+    getVideoUrl(rawVideoUrl).then((url) => {
+      if (cancelled) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      createdUrl = url;
+      if (url) {
+        setVideoUrl(url);
+      } else {
+        // Stored ref is dead — fall back to the public sample pool.
+        setVideoFailed(true);
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [rawVideoUrl]);
 
   // Pause/play depending on active state.
   useEffect(() => {
@@ -36,7 +69,7 @@ function JobCardImpl({ job, active = true }: JobCardProps) {
     <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl bg-gray-900 select-none">
       {/* Background — video only */}
       <div className="absolute inset-0 bg-black">
-        {!videoFailed ? (
+        {!videoFailed && videoUrl ? (
           <video
             ref={videoRef}
             src={videoUrl}
@@ -50,10 +83,18 @@ function JobCardImpl({ job, active = true }: JobCardProps) {
             onError={() => setVideoFailed(true)}
             className="absolute inset-0 w-full h-full object-cover"
           />
-        ) : (
+        ) : videoFailed ? (
           // Final fallback: solid gradient (rare — only if the video CDN is
           // unreachable AND the browser blocked autoplay).
           <div className="absolute inset-0 bg-gradient-to-br from-violet-700 via-fuchsia-700 to-rose-600" />
+        ) : (
+          // Resolving an idb:// ref — show poster image while we wait.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={job.image}
+            alt={job.company}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/5 pointer-events-none" />

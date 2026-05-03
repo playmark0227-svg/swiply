@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Logo from "@/components/Logo";
+import VideoUploader from "@/components/VideoUploader";
+import {
+  listVideos,
+  deleteVideo,
+  clearAllVideos,
+  type VideoRecord,
+} from "@/lib/services/videoStore";
 import {
   isAdminAuthenticated,
   loginAdmin,
@@ -918,32 +925,37 @@ function JobEditModal({
       )}
 
       {section === "media" && (
-        <div className="space-y-3">
-          <Field label="画像URL">
-            <input
-              className={inputClass}
-              value={draft.image}
-              onChange={(e) => patch("image", e.target.value)}
-            />
-          </Field>
-          {draft.image && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={draft.image}
-              alt="プレビュー"
-              className="w-full max-w-md aspect-[4/3] object-cover rounded-xl border border-gray-100"
-            />
-          )}
-          <Field label="動画URL（任意）">
-            <input
-              className={inputClass}
+        <div className="space-y-5">
+          <div>
+            <Field label="画像URL">
+              <input
+                className={inputClass}
+                value={draft.image}
+                onChange={(e) => patch("image", e.target.value)}
+              />
+            </Field>
+            {draft.image && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={draft.image}
+                alt="プレビュー"
+                className="mt-2 w-full max-w-md aspect-[4/3] object-cover rounded-xl border border-gray-100"
+              />
+            )}
+          </div>
+
+          <div>
+            <p className="block text-[10px] font-bold text-gray-500 mb-1.5 tracking-wider uppercase">
+              動画
+            </p>
+            <p className="text-[11px] text-gray-500 mb-2 leading-relaxed">
+              動画ファイルを直接ドラッグ＆ドロップ／選択／ペーストで保存できます。アップロードした動画はブラウザのIndexedDBに保管されます（このブラウザ内でのみ有効）。
+            </p>
+            <VideoUploader
               value={draft.video ?? ""}
-              onChange={(e) =>
-                patch("video", e.target.value || undefined)
-              }
-              placeholder="未指定ならカテゴリ別の自動マップを使用"
+              onChange={(v) => patch("video", v || undefined)}
             />
-          </Field>
+          </div>
         </div>
       )}
 
@@ -2406,6 +2418,92 @@ function EngagementTab() {
   );
 }
 
+function UploadedVideosPanel() {
+  const [videos, setVideos] = useState<VideoRecord[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  async function refresh() {
+    setVideos(await listVideos());
+    setLoaded(true);
+  }
+
+  useEffect(() => {
+    // External system (IndexedDB) sync.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    refresh();
+  }, []);
+
+  const totalBytes = videos.reduce((sum, v) => sum + v.size, 0);
+  const fmt = (b: number) =>
+    b < 1024 * 1024
+      ? `${(b / 1024).toFixed(1)} KB`
+      : `${(b / (1024 * 1024)).toFixed(1)} MB`;
+
+  if (!loaded) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-extrabold text-gray-900">
+            アップロード済み動画
+          </h3>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            IndexedDB に保存されたファイル ({videos.length}件 ／ 合計 {fmt(totalBytes)})
+          </p>
+        </div>
+        {videos.length > 0 && (
+          <button
+            onClick={async () => {
+              if (!confirm("すべての動画ファイルを削除しますか？関連求人の動画は再生不可になります。")) return;
+              await clearAllVideos();
+              refresh();
+            }}
+            className="px-3 h-9 rounded-xl bg-rose-50 text-rose-600 text-[12px] font-bold"
+          >
+            全削除
+          </button>
+        )}
+      </div>
+      {videos.length === 0 ? (
+        <p className="text-[12px] text-gray-400">
+          まだアップロードされた動画はありません。求人編集の「メディア」タブからアップロードできます。
+        </p>
+      ) : (
+        <ul className="divide-y divide-gray-50">
+          {videos.map((v) => (
+            <li
+              key={v.id}
+              className="flex items-center gap-3 py-2.5 text-[12px]"
+            >
+              <span className="font-mono text-[10px] text-gray-400">
+                #{v.id}
+              </span>
+              <span className="font-bold text-gray-900 flex-1 truncate">
+                {v.filename}
+              </span>
+              <span className="text-gray-500 whitespace-nowrap">{fmt(v.size)}</span>
+              <span className="text-gray-400 whitespace-nowrap">
+                {new Date(v.createdAt).toLocaleDateString("ja-JP")}
+              </span>
+              <button
+                onClick={async () => {
+                  if (!confirm("この動画を削除しますか？")) return;
+                  await deleteVideo(`idb://video-${v.id}`);
+                  refresh();
+                }}
+                className="text-rose-500 hover:underline text-[11px] font-bold"
+              >
+                削除
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
   const [email, setEmail] = useState(() =>
     typeof window === "undefined" ? "" : getAdminEmail()
@@ -2494,6 +2592,8 @@ function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
         </form>
       </div>
 
+      <UploadedVideosPanel />
+
       <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6">
         <h3 className="text-sm font-extrabold text-gray-900 mb-3">データ管理</h3>
         <div className="space-y-2">
@@ -2509,7 +2609,7 @@ function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
           <DangerButton
             label="ローカルのデモデータをすべて削除"
             sub="応募・LIKE・お知らせ・プロフィール・リードなど、このブラウザの全デモデータを削除します。"
-            onClick={() => {
+            onClick={async () => {
               if (!confirm("本当にすべて削除しますか？この操作は取り消せません。")) return;
               [
                 "swiply-applications",
@@ -2522,7 +2622,9 @@ function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
                 "swiply-profile",
                 "swiply-accounts",
                 "swiply-session",
+                "swiply-notifications",
               ].forEach((k) => localStorage.removeItem(k));
+              await clearAllVideos().catch(() => undefined);
               alert("削除しました");
             }}
           />
