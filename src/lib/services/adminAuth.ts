@@ -38,9 +38,15 @@ function readCred(): StoredCredential | null {
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as Partial<StoredCredential>;
-    if (!parsed.salt || !parsed.hash) return null;
+    // Legacy credentials (pre-email-field rollout) are missing `email`.
+    // Discard them so the new built-in defaults work without the operator
+    // having to clear localStorage manually.
+    if (!parsed.salt || !parsed.hash || !parsed.email) {
+      localStorage.removeItem(KEY);
+      return null;
+    }
     return {
-      email: parsed.email ?? DEFAULT_EMAIL,
+      email: parsed.email,
       salt: parsed.salt,
       hash: parsed.hash,
     };
