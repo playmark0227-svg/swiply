@@ -156,6 +156,15 @@ export function getLocalAccounts(): Array<Pick<Account, "uid" | "email" | "displ
   }
 }
 
+/**
+ * Write a session directly. Used by external auth providers (e.g. LINE
+ * Login) that produce their own user identity outside of email/password.
+ */
+export function setSession(session: AuthSession): void {
+  if (typeof window === "undefined") return;
+  writeSession(session);
+}
+
 export function getCurrentSession(): AuthSession | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(SESSION_KEY);

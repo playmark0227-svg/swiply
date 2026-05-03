@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Logo from "@/components/Logo";
+import LineLoginButton from "@/components/LineLoginButton";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { haptic } from "@/lib/haptic";
@@ -50,6 +51,22 @@ function LoginInner() {
             おかえりなさい
           </h1>
           <p className="text-[12px] text-gray-500 text-center mb-7">
+            LINE でかんたんログイン
+          </p>
+
+          {/* Primary auth: LINE */}
+          <LineLoginButton next={next} />
+
+          {/* Divider */}
+          <div className="my-6 flex items-center gap-3">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-[10px] tracking-widest font-bold text-gray-400">
+              または
+            </span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          <p className="text-[11px] text-gray-500 text-center mb-3">
             メールアドレスとパスワードでログイン
           </p>
 
@@ -92,9 +109,9 @@ function LoginInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full h-12 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white font-extrabold shadow-lg shadow-violet-200/60 active:scale-[0.98] disabled:opacity-60"
+              className="w-full h-11 rounded-2xl bg-gray-900 text-white font-bold text-[13px] active:scale-[0.98] disabled:opacity-60"
             >
-              {submitting ? "ログイン中…" : "ログイン"}
+              {submitting ? "ログイン中…" : "メールでログイン"}
             </button>
           </form>
 

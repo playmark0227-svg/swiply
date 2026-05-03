@@ -6,6 +6,7 @@ import {
   signIn as svcSignIn,
   signOut as svcSignOut,
   signUp as svcSignUp,
+  setSession as svcSetSession,
   subscribeAuth,
 } from "@/lib/services/userAuth";
 
@@ -15,6 +16,8 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<AuthSession>;
   signUp: (email: string, password: string, displayName: string) => Promise<AuthSession>;
   signOut: () => Promise<void>;
+  /** Adopt an externally-issued session (e.g. from LINE Login). */
+  setSession: (session: AuthSession) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -47,9 +50,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await svcSignOut();
     setSession(null);
   }
+  function adoptSession(s: AuthSession) {
+    svcSetSession(s);
+    setSession(s);
+  }
 
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ session, loading, signIn, signUp, signOut, setSession: adoptSession }}
+    >
       {children}
     </AuthContext.Provider>
   );
