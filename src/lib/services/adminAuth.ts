@@ -1,16 +1,26 @@
 /**
  * Admin gate for the ViFight ops console.
  *
- * Demo-grade only: holds a per-browser SHA-256 + salt password hash in
- * localStorage. First visit asks the operator to set a password; subsequent
- * visits prompt for it. For real production this MUST move to a backend
- * with proper SSO / IAM (Firebase Custom Claims, Auth0, IDaaS, etc.).
+ * Demo-grade only:
+ * - A built-in default credential lets the operator log in immediately
+ *   without enrolling. This is for development convenience on the static
+ *   GitHub Pages demo only — for production this MUST move to a backend
+ *   with proper SSO / IAM (Firebase Custom Claims, Auth0, IDaaS, etc.).
+ * - When a custom credential has been set (via `enrollAdmin` or
+ *   `changeAdminPassword`), the default is disabled in favour of it.
+ * - The custom credential is stored as SHA-256 + per-install salt in
+ *   localStorage.
  */
+
+// ⚠ Public repo — change before serious production use.
+const DEFAULT_EMAIL = "ayukun.0227@icloud.com";
+const DEFAULT_PASSWORD = "ayumu0227";
 
 const KEY = "swiply-admin-credential";
 const SESSION_KEY = "swiply-admin-session";
 
 interface StoredCredential {
+  email: string;
   salt: string;
   hash: string;
 }
@@ -27,31 +37,68 @@ function readCred(): StoredCredential | null {
   const raw = localStorage.getItem(KEY);
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as StoredCredential;
+    const parsed = JSON.parse(raw) as Partial<StoredCredential>;
+    if (!parsed.salt || !parsed.hash) return null;
+    return {
+      email: parsed.email ?? DEFAULT_EMAIL,
+      salt: parsed.salt,
+      hash: parsed.hash,
+    };
   } catch {
     return null;
   }
 }
 
+/** Always true now — defaults exist out of the box. Kept for API parity. */
 export function isAdminEnrolled(): boolean {
-  return !!readCred();
+  return true;
 }
 
-export async function enrollAdmin(password: string): Promise<void> {
+/** Returns the email currently registered (custom override or default). */
+export function getAdminEmail(): string {
+  return readCred()?.email ?? DEFAULT_EMAIL;
+}
+
+/** Returns the default credentials so the login screen can hint at them. */
+export function getDefaultAdminCredentials(): { email: string; password: string } {
+  return { email: DEFAULT_EMAIL, password: DEFAULT_PASSWORD };
+}
+
+/**
+ * Set or replace the admin credential. After this is called, the
+ * built-in default no longer works — only the new email/password pair.
+ */
+export async function enrollAdmin(email: string, password: string): Promise<void> {
+  email = email.trim().toLowerCase();
+  if (!email) throw new Error("メールアドレスを入力してください");
   if (password.length < 6) {
     throw new Error("パスワードは6文字以上で設定してください");
   }
   const salt = crypto.randomUUID();
   const hash = await sha256(`${salt}:${password}`);
-  localStorage.setItem(KEY, JSON.stringify({ salt, hash }));
+  localStorage.setItem(KEY, JSON.stringify({ email, salt, hash }));
   startSession();
 }
 
-export async function loginAdmin(password: string): Promise<void> {
+export async function loginAdmin(email: string, password: string): Promise<void> {
+  email = email.trim().toLowerCase();
   const cred = readCred();
-  if (!cred) throw new Error("管理者パスワードが未設定です");
-  const hash = await sha256(`${cred.salt}:${password}`);
-  if (hash !== cred.hash) throw new Error("パスワードが違います");
+  if (cred) {
+    if (cred.email.toLowerCase() !== email) {
+      throw new Error("メールアドレスまたはパスワードが違います");
+    }
+    const hash = await sha256(`${cred.salt}:${password}`);
+    if (hash !== cred.hash) {
+      throw new Error("メールアドレスまたはパスワードが違います");
+    }
+  } else {
+    if (
+      email !== DEFAULT_EMAIL.toLowerCase() ||
+      password !== DEFAULT_PASSWORD
+    ) {
+      throw new Error("メールアドレスまたはパスワードが違います");
+    }
+  }
   startSession();
 }
 
@@ -67,10 +114,12 @@ export function isAdminAuthenticated(): boolean {
 
 export async function changeAdminPassword(
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
+  newEmail?: string
 ): Promise<void> {
-  await loginAdmin(currentPassword);
-  await enrollAdmin(newPassword);
+  const email = readCred()?.email ?? DEFAULT_EMAIL;
+  await loginAdmin(email, currentPassword);
+  await enrollAdmin(newEmail ?? email, newPassword);
 }
 
 export function resetAdminCredential(): void {

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import Logo from "@/components/Logo";
 import {
-  enrollAdmin,
   isAdminAuthenticated,
-  isAdminEnrolled,
   loginAdmin,
   logoutAdmin,
   changeAdminPassword,
   resetAdminCredential,
+  getDefaultAdminCredentials,
+  getAdminEmail,
 } from "@/lib/services/adminAuth";
 import {
   getMergedJobs,
@@ -73,29 +73,21 @@ export default function ClientAdminPage() {
 // Auth gate (enroll on first visit, login afterwards)
 // =================================================================
 function AuthGate({ onAuthed }: { onAuthed: () => void }) {
-  const [enrolled, setEnrolled] = useState(false);
+  // Pre-fill the email field with the registered admin email so the
+  // operator only needs to type the password.
+  const [email, setEmail] = useState(() =>
+    typeof window === "undefined" ? "" : getAdminEmail()
+  );
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    setEnrolled(isAdminEnrolled());
-  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSubmitting(true);
     try {
-      if (enrolled) {
-        await loginAdmin(password);
-      } else {
-        if (password !== confirmPassword) {
-          throw new Error("パスワードが一致しません");
-        }
-        await enrollAdmin(password);
-      }
+      await loginAdmin(email, password);
       onAuthed();
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
@@ -103,6 +95,9 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
       setSubmitting(false);
     }
   }
+
+  const defaults = getDefaultAdminCredentials();
+  const usingDefaults = email.toLowerCase() === defaults.email.toLowerCase();
 
   return (
     <div className="min-h-dvh bg-gray-950 text-white flex items-center justify-center px-5">
@@ -120,33 +115,31 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
         </div>
 
         <h1 className="text-xl font-extrabold text-center mb-1">
-          {enrolled ? "管理者ログイン" : "管理者パスワード設定"}
+          管理者ログイン
         </h1>
         <p className="text-[12px] text-white/50 text-center mb-7 leading-relaxed">
-          {enrolled
-            ? "SWIPLY 運営者向け管理コンソール"
-            : "このブラウザで使う管理者パスワードを設定してください"}
+          SWIPLY 運営者向け管理コンソール
         </p>
 
         <form onSubmit={onSubmit} className="space-y-3">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="メールアドレス"
+            autoComplete="email"
+            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 focus:bg-white/10"
+          />
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="パスワード"
+            autoComplete="current-password"
             className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 focus:bg-white/10"
           />
-          {!enrolled && (
-            <input
-              type="password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="パスワード（確認）"
-              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-400 focus:bg-white/10"
-            />
-          )}
 
           {error && (
             <p className="text-[12px] text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl px-3 py-2">
@@ -159,9 +152,22 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
             disabled={submitting}
             className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-sm font-extrabold disabled:opacity-60"
           >
-            {submitting ? "..." : enrolled ? "ログイン" : "設定して入る"}
+            {submitting ? "..." : "ログイン"}
           </button>
         </form>
+
+        {usingDefaults && (
+          <div className="mt-4 px-3 py-2.5 rounded-xl border border-amber-400/20 bg-amber-400/5">
+            <p className="text-[10px] text-amber-300/90 font-bold mb-1">
+              開発用デフォルト認証情報
+            </p>
+            <p className="text-[11px] text-amber-100/80 leading-relaxed font-mono">
+              {defaults.email}
+              <br />
+              {defaults.password}
+            </p>
+          </div>
+        )}
 
         <p className="text-[10px] text-white/30 text-center mt-6 leading-relaxed">
           ⚠ デモ環境では認証情報がブラウザ内（localStorage）に保存されます。
@@ -1198,6 +1204,9 @@ function StatusBadge({ status }: { status: UserProfile["kyc"]["status"] }) {
 // Tab: Settings
 // =================================================================
 function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
+  const [email, setEmail] = useState(() =>
+    typeof window === "undefined" ? "" : getAdminEmail()
+  );
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
@@ -1213,8 +1222,8 @@ function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
       return;
     }
     try {
-      await changeAdminPassword(currentPw, newPw);
-      setMsg("パスワードを変更しました");
+      await changeAdminPassword(currentPw, newPw, email);
+      setMsg("認証情報を更新しました");
       setCurrentPw("");
       setNewPw("");
       setConfirmPw("");
@@ -1226,8 +1235,25 @@ function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6">
-        <h3 className="text-sm font-extrabold text-gray-900 mb-3">管理者パスワード変更</h3>
+        <h3 className="text-sm font-extrabold text-gray-900 mb-3">
+          管理者認証情報の変更
+        </h3>
+        <p className="text-[11px] text-gray-500 mb-4 leading-relaxed">
+          ここで設定するとビルトインのデフォルト認証は無効化され、ご自身で設定したメールアドレスとパスワードのみで運用されます。
+        </p>
         <form onSubmit={changePw} className="space-y-3">
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 mb-1.5 tracking-wider uppercase">
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputClass}
+            />
+          </div>
           <input
             type="password"
             value={currentPw}
