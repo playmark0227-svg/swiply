@@ -32,10 +32,32 @@ import {
   type Application,
   type ApplicationStatus,
 } from "@/lib/services/applications";
-import { getLocalLeads, type BusinessLead } from "@/lib/services/businessLeads";
+import {
+  getLocalLeads,
+  adminUpdateLead,
+  adminDeleteLead,
+  LEAD_STATUS_LABEL,
+  LEAD_STATUS_TONE,
+  type BusinessLead,
+  type LeadStatus,
+} from "@/lib/services/businessLeads";
 import { getLocalAccounts } from "@/lib/services/userAuth";
 import { getProfile, saveProfile } from "@/lib/services/profile";
-import { getLikedJobIds } from "@/lib/services/likes";
+import { defaultProfile } from "@/types/profile";
+import { getLikedJobIds, removeLike } from "@/lib/services/likes";
+import {
+  type Notification,
+  type NotificationType,
+  getNotifications,
+  adminCreateNotification,
+  adminUpdateNotification,
+  adminDeleteNotification,
+  adminClearNotifications,
+  adminResetNotifications,
+  TYPE_LABEL,
+  TYPE_COLOR,
+} from "@/lib/services/notifications";
+import { getRecentlyViewedIds, clearRecentlyViewed } from "@/lib/services/recentlyViewed";
 import type { Job, JobType } from "@/types/job";
 import type { UserProfile } from "@/types/profile";
 
@@ -46,6 +68,9 @@ type Tab =
   | "leads"
   | "users"
   | "kyc"
+  | "notifications"
+  | "profile"
+  | "engagement"
   | "settings";
 
 // =================================================================
@@ -198,13 +223,16 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
     onSignOut();
   }
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  const tabs: { id: Tab; label: string; icon: React.ReactNode; group?: string }[] = [
     { id: "dashboard", label: "ダッシュボード", icon: <IconDashboard /> },
-    { id: "jobs", label: "求人管理", icon: <IconBriefcase /> },
-    { id: "applications", label: "応募管理", icon: <IconClipboard /> },
-    { id: "leads", label: "B2Bリード", icon: <IconBuilding /> },
-    { id: "users", label: "ユーザー", icon: <IconUsers /> },
-    { id: "kyc", label: "本人確認", icon: <IconShield /> },
+    { id: "jobs", label: "求人管理", icon: <IconBriefcase />, group: "コンテンツ" },
+    { id: "notifications", label: "通知配信", icon: <IconBell />, group: "コンテンツ" },
+    { id: "applications", label: "応募管理", icon: <IconClipboard />, group: "ユーザー対応" },
+    { id: "leads", label: "B2Bリード", icon: <IconBuilding />, group: "ユーザー対応" },
+    { id: "users", label: "ユーザー", icon: <IconUsers />, group: "ユーザー対応" },
+    { id: "kyc", label: "本人確認", icon: <IconShield />, group: "ユーザー対応" },
+    { id: "profile", label: "プロフィール", icon: <IconUser />, group: "デモデータ" },
+    { id: "engagement", label: "LIKE / 履歴", icon: <IconHeart />, group: "デモデータ" },
     { id: "settings", label: "設定", icon: <IconCog /> },
   ];
 
@@ -229,26 +257,34 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
         </div>
 
         <nav className="flex-1 overflow-y-auto py-3 px-3">
-          {tabs.map((t) => {
+          {tabs.map((t, i) => {
             const active = tab === t.id;
+            const prevGroup = i > 0 ? tabs[i - 1].group : undefined;
+            const groupChanged = t.group !== prevGroup;
             return (
-              <button
-                key={t.id}
-                onClick={() => {
-                  setTab(t.id);
-                  setNavOpen(false);
-                }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold transition mb-1 ${
-                  active
-                    ? "bg-gradient-to-r from-blue-500/30 to-cyan-400/20 text-white border border-cyan-400/30"
-                    : "text-white/60 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className={active ? "text-cyan-300" : "text-white/40"}>
-                  {t.icon}
-                </span>
-                {t.label}
-              </button>
+              <div key={t.id}>
+                {groupChanged && t.group && (
+                  <p className="text-[9px] font-bold tracking-[0.2em] text-white/30 uppercase px-3 mt-3 mb-1">
+                    {t.group}
+                  </p>
+                )}
+                <button
+                  onClick={() => {
+                    setTab(t.id);
+                    setNavOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-bold transition mb-1 ${
+                    active
+                      ? "bg-gradient-to-r from-blue-500/30 to-cyan-400/20 text-white border border-cyan-400/30"
+                      : "text-white/60 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  <span className={active ? "text-cyan-300" : "text-white/40"}>
+                    {t.icon}
+                  </span>
+                  {t.label}
+                </button>
+              </div>
             );
           })}
         </nav>
@@ -313,6 +349,9 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
           {tab === "leads" && <LeadsTab />}
           {tab === "users" && <UsersTab />}
           {tab === "kyc" && <KycTab />}
+          {tab === "notifications" && <NotificationsTab />}
+          {tab === "profile" && <ProfileTab />}
+          {tab === "engagement" && <EngagementTab />}
           {tab === "settings" && <SettingsTab onAfterReset={onSignOut} />}
         </div>
       </main>
@@ -465,39 +504,57 @@ function JobsTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <Th>ID</Th>
-                <Th>タイトル</Th>
                 <Th>会社</Th>
+                <Th>タイトル</Th>
                 <Th>種別</Th>
                 <Th>給与</Th>
+                <Th>勤務地</Th>
                 <Th>状態</Th>
+                <Th>掲載日</Th>
+                <Th>ID</Th>
                 <Th>操作</Th>
               </tr>
             </thead>
             <tbody>
               {visible.map((job) => (
                 <tr key={job.id} className="border-t border-gray-50 hover:bg-gray-50/40">
-                  <Td className="font-mono text-[10px] text-gray-400">{job.id}</Td>
                   <Td className="font-bold text-gray-900">
-                    <div className="line-clamp-1 max-w-[200px]">{job.title}</div>
+                    <div className="line-clamp-1 max-w-[200px]">{job.company}</div>
                   </Td>
-                  <Td className="text-gray-600">
-                    <div className="line-clamp-1 max-w-[160px]">{job.company}</div>
+                  <Td className="text-gray-700">
+                    <div className="line-clamp-1 max-w-[220px]">{job.title}</div>
                   </Td>
                   <Td>
                     <TypeBadge type={job.type} />
                   </Td>
                   <Td className="text-gray-600 whitespace-nowrap">{job.salary}</Td>
+                  <Td className="text-gray-500 text-[11px]">
+                    <div className="line-clamp-1 max-w-[140px]">{job.location}</div>
+                  </Td>
                   <Td>
                     <div className="flex flex-wrap gap-1">
                       {job.featured && <Tag color="amber">★ PICK</Tag>}
                       {job.urgent && <Tag color="rose">急募</Tag>}
                       {job.remoteOk && <Tag color="violet">リモート</Tag>}
-                      {isJobAdminCreated(job.id) && <Tag color="cyan">管理画面作成</Tag>}
+                      {isJobAdminCreated(job.id) && <Tag color="cyan">追加</Tag>}
                     </div>
                   </Td>
+                  <Td className="text-gray-400 text-[10px] whitespace-nowrap">
+                    {job.postedAt
+                      ? new Date(job.postedAt).toLocaleDateString("ja-JP")
+                      : "—"}
+                  </Td>
+                  <Td className="font-mono text-[10px] text-gray-400">{job.id}</Td>
                   <Td>
                     <div className="flex gap-1">
+                      <a
+                        href={`/job/${job.id}/`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 text-[11px] font-bold hover:bg-gray-100"
+                      >
+                        表示
+                      </a>
                       <button
                         onClick={() => setEditing(job)}
                         className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100"
@@ -524,7 +581,7 @@ function JobsTab() {
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-gray-400 py-10 text-[12px]">
+                  <td colSpan={9} className="text-center text-gray-400 py-10 text-[12px]">
                     対象がありません
                   </td>
                 </tr>
@@ -615,161 +672,413 @@ function JobEditModal({
   onClose: () => void;
   onSave: (patch: Partial<Job>) => void;
 }) {
-  const [draft, setDraft] = useState<Job>({ ...job });
+  const [draft, setDraft] = useState<Job>({ ...job, qa: job.qa ?? [] });
+  const [section, setSection] = useState<
+    "basic" | "description" | "conditions" | "media" | "qa" | "stats"
+  >("basic");
 
   function patch<K extends keyof Job>(k: K, v: Job[K]) {
     setDraft((d) => ({ ...d, [k]: v }));
   }
 
+  const sections: { id: typeof section; label: string }[] = [
+    { id: "basic", label: "基本" },
+    { id: "description", label: "説明" },
+    { id: "conditions", label: "条件" },
+    { id: "media", label: "メディア" },
+    { id: "qa", label: "Q&A・企業" },
+    { id: "stats", label: "メタ" },
+  ];
+
   return (
-    <ModalShell title={`求人を編集 — ${job.id}`} onClose={onClose}>
-      <div className="grid md:grid-cols-2 gap-3">
-        <Field label="タイトル">
-          <input
-            className={inputClass}
-            value={draft.title}
-            onChange={(e) => patch("title", e.target.value)}
-          />
-        </Field>
-        <Field label="会社名">
-          <input
-            className={inputClass}
-            value={draft.company}
-            onChange={(e) => patch("company", e.target.value)}
-          />
-        </Field>
-        <Field label="給与（表示）">
-          <input
-            className={inputClass}
-            value={draft.salary}
-            onChange={(e) => patch("salary", e.target.value)}
-          />
-        </Field>
-        <Field label="給与（数値）">
-          <input
-            type="number"
-            className={inputClass}
-            value={draft.salaryValue}
-            onChange={(e) => patch("salaryValue", parseInt(e.target.value, 10) || 0)}
-          />
-        </Field>
-        <Field label="勤務地">
-          <input
-            className={inputClass}
-            value={draft.location}
-            onChange={(e) => patch("location", e.target.value)}
-          />
-        </Field>
-        <Field label="エリア (region)">
-          <select
-            className={inputClass}
-            value={draft.region}
-            onChange={(e) => patch("region", e.target.value)}
+    <ModalShell title={`求人を編集 — ${draft.company || "（無題）"}`} onClose={onClose}>
+      {/* Section tabs */}
+      <div className="flex gap-1 border-b border-gray-100 mb-4 -mt-1 overflow-x-auto">
+        {sections.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setSection(s.id)}
+            className={`px-3 py-2 text-[12px] font-bold whitespace-nowrap border-b-2 transition ${
+              section === s.id
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-400 hover:text-gray-700"
+            }`}
           >
-            {["tokyo", "kanagawa", "saitama", "chiba", "osaka", "remote", "other"].map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </Field>
-        <Field label="種別">
-          <select
-            className={inputClass}
-            value={draft.type}
-            onChange={(e) => patch("type", e.target.value as JobType)}
-          >
-            <option value="baito">バイト</option>
-            <option value="gig">単発</option>
-            <option value="career">正社員</option>
-          </select>
-        </Field>
-        <Field label="カテゴリ">
-          <input
-            className={inputClass}
-            value={draft.category}
-            onChange={(e) => patch("category", e.target.value)}
-          />
-        </Field>
-        <Field label="雇用形態">
-          <input
-            className={inputClass}
-            value={draft.employmentType}
-            onChange={(e) => patch("employmentType", e.target.value)}
-          />
-        </Field>
-        <Field label="勤務日数">
-          <input
-            className={inputClass}
-            value={draft.minDays}
-            onChange={(e) => patch("minDays", e.target.value)}
-          />
-        </Field>
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      <Field label="キャッチコピー" className="mt-3">
-        <input
-          className={inputClass}
-          value={draft.catchphrase}
-          onChange={(e) => patch("catchphrase", e.target.value)}
-        />
-      </Field>
+      {section === "basic" && (
+        <div className="space-y-3">
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="会社名">
+              <input
+                className={inputClass}
+                value={draft.company}
+                onChange={(e) => patch("company", e.target.value)}
+              />
+            </Field>
+            <Field label="タイトル">
+              <input
+                className={inputClass}
+                value={draft.title}
+                onChange={(e) => patch("title", e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="キャッチコピー">
+            <input
+              className={inputClass}
+              value={draft.catchphrase}
+              onChange={(e) => patch("catchphrase", e.target.value)}
+            />
+          </Field>
+          <div className="grid md:grid-cols-3 gap-3">
+            <Field label="種別">
+              <select
+                className={inputClass}
+                value={draft.type}
+                onChange={(e) => patch("type", e.target.value as JobType)}
+              >
+                <option value="baito">バイト</option>
+                <option value="gig">単発</option>
+                <option value="career">正社員</option>
+              </select>
+            </Field>
+            <Field label="雇用形態">
+              <input
+                className={inputClass}
+                value={draft.employmentType}
+                onChange={(e) => patch("employmentType", e.target.value)}
+              />
+            </Field>
+            <Field label="カテゴリ">
+              <select
+                className={inputClass}
+                value={draft.category}
+                onChange={(e) => patch("category", e.target.value)}
+              >
+                {[
+                  "food", "service", "office", "engineering",
+                  "creative", "sales", "logistics", "event", "other"
+                ].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="給与（表示）">
+              <input
+                className={inputClass}
+                value={draft.salary}
+                onChange={(e) => patch("salary", e.target.value)}
+                placeholder="時給 1,200円 / 月給 25万円〜 等"
+              />
+            </Field>
+            <Field label="給与（数値・並び替え用）">
+              <input
+                type="number"
+                className={inputClass}
+                value={draft.salaryValue}
+                onChange={(e) =>
+                  patch("salaryValue", parseInt(e.target.value, 10) || 0)
+                }
+              />
+            </Field>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="勤務地">
+              <input
+                className={inputClass}
+                value={draft.location}
+                onChange={(e) => patch("location", e.target.value)}
+              />
+            </Field>
+            <Field label="エリアキー">
+              <select
+                className={inputClass}
+                value={draft.region}
+                onChange={(e) => patch("region", e.target.value)}
+              >
+                {["tokyo", "kanagawa", "saitama", "chiba", "osaka", "remote", "other"].map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Toggle
+              label="★ PICK (featured)"
+              on={!!draft.featured}
+              onChange={(v) => patch("featured", v)}
+            />
+            <Toggle
+              label="急募"
+              on={!!draft.urgent}
+              onChange={(v) => patch("urgent", v)}
+            />
+            <Toggle
+              label="リモートOK"
+              on={!!draft.remoteOk}
+              onChange={(v) => patch("remoteOk", v)}
+            />
+          </div>
+        </div>
+      )}
 
-      <Field label="説明" className="mt-3">
-        <textarea
-          className={`${inputClass} resize-none`}
-          rows={4}
-          value={draft.description}
-          onChange={(e) => patch("description", e.target.value)}
-        />
-      </Field>
+      {section === "description" && (
+        <div className="space-y-3">
+          <Field label="仕事内容">
+            <textarea
+              className={`${inputClass} resize-y min-h-[120px]`}
+              rows={6}
+              value={draft.description}
+              onChange={(e) => patch("description", e.target.value)}
+            />
+          </Field>
+          <ListEditor
+            label="応募条件"
+            items={draft.requirements}
+            onChange={(v) => patch("requirements", v)}
+            placeholder="例: 未経験OK / 18歳以上 / 週2日〜"
+          />
+          <ListEditor
+            label="待遇・福利厚生"
+            items={draft.benefits}
+            onChange={(v) => patch("benefits", v)}
+            placeholder="例: 交通費支給 / まかない付き / 髪色自由"
+          />
+          <Field label="タグ（カンマ区切り）">
+            <input
+              className={inputClass}
+              value={draft.tags.join(", ")}
+              onChange={(e) =>
+                patch(
+                  "tags",
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                )
+              }
+            />
+          </Field>
+        </div>
+      )}
 
-      <Field label="画像URL" className="mt-3">
-        <input
-          className={inputClass}
-          value={draft.image}
-          onChange={(e) => patch("image", e.target.value)}
-        />
-      </Field>
+      {section === "conditions" && (
+        <div className="space-y-3">
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="勤務時間">
+              <input
+                className={inputClass}
+                value={draft.workHours}
+                onChange={(e) => patch("workHours", e.target.value)}
+              />
+            </Field>
+            <Field label="勤務日数">
+              <input
+                className={inputClass}
+                value={draft.minDays}
+                onChange={(e) => patch("minDays", e.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="アクセス">
+            <input
+              className={inputClass}
+              value={draft.access}
+              onChange={(e) => patch("access", e.target.value)}
+              placeholder="例: 渋谷駅 徒歩5分"
+            />
+          </Field>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="経験">
+              <input
+                className={inputClass}
+                value={draft.experience}
+                onChange={(e) => patch("experience", e.target.value)}
+                placeholder="未経験OK / 2年以上 等"
+              />
+            </Field>
+            <Field label="年齢条件（任意）">
+              <input
+                className={inputClass}
+                value={draft.ageRequirement ?? ""}
+                onChange={(e) =>
+                  patch("ageRequirement", e.target.value || undefined)
+                }
+                placeholder="例: 18歳以上"
+              />
+            </Field>
+          </div>
+        </div>
+      )}
 
-      <Field label="動画URL（任意）" className="mt-3">
-        <input
-          className={inputClass}
-          value={draft.video ?? ""}
-          onChange={(e) => patch("video", e.target.value || undefined)}
-          placeholder="未指定ならカテゴリ別の自動マップを使用"
-        />
-      </Field>
+      {section === "media" && (
+        <div className="space-y-3">
+          <Field label="画像URL">
+            <input
+              className={inputClass}
+              value={draft.image}
+              onChange={(e) => patch("image", e.target.value)}
+            />
+          </Field>
+          {draft.image && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={draft.image}
+              alt="プレビュー"
+              className="w-full max-w-md aspect-[4/3] object-cover rounded-xl border border-gray-100"
+            />
+          )}
+          <Field label="動画URL（任意）">
+            <input
+              className={inputClass}
+              value={draft.video ?? ""}
+              onChange={(e) =>
+                patch("video", e.target.value || undefined)
+              }
+              placeholder="未指定ならカテゴリ別の自動マップを使用"
+            />
+          </Field>
+        </div>
+      )}
 
-      <Field label="タグ（カンマ区切り）" className="mt-3">
-        <input
-          className={inputClass}
-          value={draft.tags.join(", ")}
-          onChange={(e) =>
-            patch(
-              "tags",
-              e.target.value
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            )
-          }
-        />
-      </Field>
+      {section === "qa" && (
+        <div className="space-y-4">
+          <Field label="企業紹介（任意）">
+            <textarea
+              className={`${inputClass} resize-y min-h-[80px]`}
+              rows={3}
+              value={draft.companyDescription ?? ""}
+              onChange={(e) =>
+                patch(
+                  "companyDescription",
+                  e.target.value || undefined
+                )
+              }
+              placeholder="会社の事業内容、沿革、雰囲気など"
+            />
+          </Field>
 
-      <div className="grid grid-cols-3 gap-3 mt-3">
-        <Toggle
-          label="★ PICK (featured)"
-          on={!!draft.featured}
-          onChange={(v) => patch("featured", v)}
-        />
-        <Toggle label="急募" on={!!draft.urgent} onChange={(v) => patch("urgent", v)} />
-        <Toggle
-          label="リモートOK"
-          on={!!draft.remoteOk}
-          onChange={(v) => patch("remoteOk", v)}
-        />
-      </div>
+          <div>
+            <label className="block text-[10px] font-bold text-gray-500 mb-2 tracking-wider uppercase">
+              よくある質問
+            </label>
+            <div className="space-y-3">
+              {(draft.qa ?? []).map((qa, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl border border-gray-100 bg-gray-50/40 p-3 space-y-2"
+                >
+                  <input
+                    className={inputClass}
+                    value={qa.q}
+                    placeholder="質問"
+                    onChange={(e) => {
+                      const next = [...(draft.qa ?? [])];
+                      next[i] = { ...next[i], q: e.target.value };
+                      patch("qa", next);
+                    }}
+                  />
+                  <textarea
+                    className={`${inputClass} resize-none`}
+                    rows={2}
+                    value={qa.a}
+                    placeholder="回答"
+                    onChange={(e) => {
+                      const next = [...(draft.qa ?? [])];
+                      next[i] = { ...next[i], a: e.target.value };
+                      patch("qa", next);
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const next = (draft.qa ?? []).filter(
+                        (_, idx) => idx !== i
+                      );
+                      patch("qa", next);
+                    }}
+                    className="text-[11px] font-bold text-rose-500 hover:underline"
+                  >
+                    削除
+                  </button>
+                </div>
+              ))}
+              <button
+                onClick={() =>
+                  patch("qa", [...(draft.qa ?? []), { q: "", a: "" }])
+                }
+                className="w-full py-2.5 rounded-xl border-2 border-dashed border-gray-200 text-[12px] font-bold text-gray-500 hover:border-blue-300 hover:text-blue-600"
+              >
+                + Q&A を追加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="flex gap-2 mt-6">
+      {section === "stats" && (
+        <div className="space-y-3">
+          <Field label="掲載日 (postedAt)">
+            <input
+              type="date"
+              className={inputClass}
+              value={draft.postedAt ? draft.postedAt.slice(0, 10) : ""}
+              onChange={(e) =>
+                patch(
+                  "postedAt",
+                  e.target.value
+                    ? new Date(e.target.value).toISOString()
+                    : new Date().toISOString()
+                )
+              }
+            />
+          </Field>
+          <div className="grid md:grid-cols-2 gap-3">
+            <Field label="今週の応募者数（表示用）">
+              <input
+                type="number"
+                min={0}
+                className={inputClass}
+                value={draft.applicants ?? 0}
+                onChange={(e) =>
+                  patch(
+                    "applicants",
+                    e.target.value === "" ? undefined : parseInt(e.target.value, 10) || 0
+                  )
+                }
+              />
+            </Field>
+            <Field label="閲覧数（表示用）">
+              <input
+                type="number"
+                min={0}
+                className={inputClass}
+                value={draft.views ?? 0}
+                onChange={(e) =>
+                  patch(
+                    "views",
+                    e.target.value === "" ? undefined : parseInt(e.target.value, 10) || 0
+                  )
+                }
+              />
+            </Field>
+          </div>
+          <Field label="求人 ID（変更不可）">
+            <input
+              className={`${inputClass} font-mono text-gray-400`}
+              value={draft.id}
+              readOnly
+            />
+          </Field>
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-6 sticky bottom-0 bg-white pt-4 -mx-5 md:-mx-6 px-5 md:px-6 border-t border-gray-100">
         <button
           onClick={onClose}
           className="flex-1 h-11 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm"
@@ -784,6 +1093,72 @@ function JobEditModal({
         </button>
       </div>
     </ModalShell>
+  );
+}
+
+function ListEditor({
+  label,
+  items,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  items: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  return (
+    <div>
+      <label className="block text-[10px] font-bold text-gray-500 mb-1.5 tracking-wider uppercase">
+        {label}
+      </label>
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {items.map((it, i) => (
+          <span
+            key={i}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[12px] font-medium"
+          >
+            {it}
+            <button
+              onClick={() => onChange(items.filter((_, idx) => idx !== i))}
+              className="text-blue-300 hover:text-blue-700"
+              aria-label="削除"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        {items.length === 0 && (
+          <span className="text-[11px] text-gray-300">なし</span>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <input
+          className={inputClass}
+          value={draft}
+          placeholder={placeholder ?? "新しい項目を追加"}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && draft.trim()) {
+              e.preventDefault();
+              onChange([...items, draft.trim()]);
+              setDraft("");
+            }
+          }}
+        />
+        <button
+          onClick={() => {
+            if (!draft.trim()) return;
+            onChange([...items, draft.trim()]);
+            setDraft("");
+          }}
+          className="px-4 rounded-xl bg-gray-900 text-white text-[12px] font-bold whitespace-nowrap"
+        >
+          追加
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -834,10 +1209,19 @@ function ApplicationsTab() {
   const [apps, setApps] = useState<Application[]>([]);
   const [filter, setFilter] = useState<ApplicationStatus | "all">("all");
   const [bump, setBump] = useState(0);
+  const [detail, setDetail] = useState<Application | null>(null);
 
   useEffect(() => {
     getApplications().then(setApps);
   }, [bump]);
+
+  // Sync the open detail modal when underlying apps update.
+  useEffect(() => {
+    if (!detail) return;
+    const fresh = apps.find((a) => a.id === detail.id);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (fresh && fresh !== detail) setDetail(fresh);
+  }, [apps, detail]);
 
   const visible = useMemo(() => {
     if (filter === "all") return apps;
@@ -869,66 +1253,79 @@ function ApplicationsTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <Th>応募ID</Th>
-                <Th>求人</Th>
+                <Th>会社 ／ 求人</Th>
                 <Th>応募日</Th>
+                <Th>最終更新</Th>
                 <Th>状態</Th>
                 <Th>操作</Th>
               </tr>
             </thead>
             <tbody>
-              {visible.map((app) => (
-                <tr key={app.id} className="border-t border-gray-50 hover:bg-gray-50/40">
-                  <Td className="font-mono text-[10px] text-gray-400">{app.id.slice(0, 12)}…</Td>
-                  <Td>
-                    <div className="font-bold text-gray-900 line-clamp-1 max-w-[260px]">{app.jobTitle}</div>
-                    <div className="text-gray-500 text-[11px] line-clamp-1 max-w-[260px]">{app.jobCompany}</div>
-                  </Td>
-                  <Td className="text-gray-600 whitespace-nowrap">
-                    {new Date(app.appliedAt).toLocaleDateString("ja-JP")}
-                  </Td>
-                  <Td>
-                    <select
-                      value={app.status}
-                      onChange={async (e) => {
-                        await adminSetApplicationStatus(
-                          app.id,
-                          e.target.value as ApplicationStatus
-                        );
-                        setBump((b) => b + 1);
-                      }}
-                      className={`px-2 py-1 rounded-lg border text-[11px] font-bold ${STATUS_TONE[app.status]}`}
-                    >
-                      {(
-                        [
-                          "submitted",
-                          "reviewing",
-                          "interview",
-                          "offered",
-                          "rejected",
-                          "withdrawn",
-                        ] as const
-                      ).map((s) => (
-                        <option key={s} value={s}>
-                          {STATUS_LABEL[s]}
-                        </option>
-                      ))}
-                    </select>
-                  </Td>
-                  <Td>
-                    <button
-                      onClick={async () => {
-                        if (!confirm("この応募を削除しますか？")) return;
-                        await adminDeleteApplication(app.id);
-                        setBump((b) => b + 1);
-                      }}
-                      className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100"
-                    >
-                      削除
-                    </button>
-                  </Td>
-                </tr>
-              ))}
+              {visible.map((app) => {
+                const lastEvent = app.events[app.events.length - 1];
+                return (
+                  <tr key={app.id} className="border-t border-gray-50 hover:bg-gray-50/40">
+                    <Td>
+                      <div className="font-bold text-gray-900 line-clamp-1 max-w-[280px]">{app.jobCompany}</div>
+                      <div className="text-gray-500 text-[11px] line-clamp-1 max-w-[280px]">{app.jobTitle}</div>
+                    </Td>
+                    <Td className="text-gray-600 whitespace-nowrap">
+                      {new Date(app.appliedAt).toLocaleDateString("ja-JP")}
+                    </Td>
+                    <Td className="text-gray-400 text-[11px] whitespace-nowrap">
+                      {lastEvent ? new Date(lastEvent.at).toLocaleDateString("ja-JP") : "—"}
+                    </Td>
+                    <Td>
+                      <select
+                        value={app.status}
+                        onChange={async (e) => {
+                          await adminSetApplicationStatus(
+                            app.id,
+                            e.target.value as ApplicationStatus
+                          );
+                          setBump((b) => b + 1);
+                        }}
+                        className={`px-2 py-1 rounded-lg border text-[11px] font-bold ${STATUS_TONE[app.status]}`}
+                      >
+                        {(
+                          [
+                            "submitted",
+                            "reviewing",
+                            "interview",
+                            "offered",
+                            "rejected",
+                            "withdrawn",
+                          ] as const
+                        ).map((s) => (
+                          <option key={s} value={s}>
+                            {STATUS_LABEL[s]}
+                          </option>
+                        ))}
+                      </select>
+                    </Td>
+                    <Td>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => setDetail(app)}
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100"
+                        >
+                          詳細
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm("この応募を削除しますか？")) return;
+                            await adminDeleteApplication(app.id);
+                            setBump((b) => b + 1);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    </Td>
+                  </tr>
+                );
+              })}
               {visible.length === 0 && (
                 <tr>
                   <td colSpan={5} className="text-center text-gray-400 py-10 text-[12px]">
@@ -940,7 +1337,170 @@ function ApplicationsTab() {
           </table>
         </div>
       </div>
+
+      {detail && (
+        <ApplicationDetailModal
+          app={detail}
+          onClose={() => setDetail(null)}
+          onChange={() => setBump((b) => b + 1)}
+        />
+      )}
     </div>
+  );
+}
+
+function ApplicationDetailModal({
+  app,
+  onClose,
+  onChange,
+}: {
+  app: Application;
+  onClose: () => void;
+  onChange: () => void;
+}) {
+  const [note, setNote] = useState("");
+  const [nextStatus, setNextStatus] = useState<ApplicationStatus>(app.status);
+
+  async function addEvent() {
+    await adminSetApplicationStatus(app.id, nextStatus, note.trim() || undefined);
+    setNote("");
+    onChange();
+  }
+
+  return (
+    <ModalShell title={`応募詳細 — ${app.jobCompany}`} onClose={onClose}>
+      <div className="space-y-5">
+        <div className="rounded-2xl bg-gray-50 border border-gray-100 p-4">
+          <div className="flex items-start gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={app.jobImage}
+              alt=""
+              className="w-16 h-16 rounded-xl object-cover shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] text-gray-500">{app.jobCompany}</p>
+              <p className="text-sm font-extrabold text-gray-900">{app.jobTitle}</p>
+              <a
+                href={`/job/${app.jobId}/`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[11px] text-blue-600 hover:underline"
+              >
+                求人ページを開く →
+              </a>
+            </div>
+            <span
+              className={`px-2 py-0.5 rounded border text-[10px] font-bold ${STATUS_TONE[app.status]}`}
+            >
+              {STATUS_LABEL[app.status]}
+            </span>
+          </div>
+          <p className="text-[11px] text-gray-400 mt-3">
+            応募ID: <span className="font-mono">{app.id}</span> / 応募日:{" "}
+            {new Date(app.appliedAt).toLocaleString("ja-JP")}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase mb-2">
+            応募メッセージ
+          </p>
+          <textarea
+            className={`${inputClass} resize-y min-h-[100px]`}
+            rows={4}
+            value={app.message}
+            onChange={(e) => {
+              // Inline edit — persist directly back to localStorage.
+              if (typeof window === "undefined") return;
+              const raw = localStorage.getItem("swiply-applications");
+              if (!raw) return;
+              try {
+                const list = JSON.parse(raw) as Application[];
+                const idx = list.findIndex((a) => a.id === app.id);
+                if (idx < 0) return;
+                list[idx] = { ...list[idx], message: e.target.value };
+                localStorage.setItem("swiply-applications", JSON.stringify(list));
+                onChange();
+              } catch {
+                // ignore
+              }
+            }}
+          />
+        </div>
+
+        <div>
+          <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase mb-2">
+            ステータス更新 / メモ追加
+          </p>
+          <div className="grid md:grid-cols-[180px_1fr_auto] gap-2">
+            <select
+              value={nextStatus}
+              onChange={(e) => setNextStatus(e.target.value as ApplicationStatus)}
+              className={inputClass}
+            >
+              {(
+                [
+                  "submitted",
+                  "reviewing",
+                  "interview",
+                  "offered",
+                  "rejected",
+                  "withdrawn",
+                ] as const
+              ).map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+            <input
+              className={inputClass}
+              placeholder="メモ（任意）— 例: 一次面接 12/3 14:00"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <button
+              onClick={addEvent}
+              className="px-4 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] font-extrabold shadow-md whitespace-nowrap"
+            >
+              更新
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase mb-2">
+            イベント履歴
+          </p>
+          <ol className="relative border-l-2 border-gray-100 pl-5 space-y-3">
+            {[...app.events].reverse().map((ev, i) => (
+              <li key={i} className="relative">
+                <span
+                  className={`absolute -left-[27px] top-1 w-3 h-3 rounded-full border-2 border-white ${
+                    i === 0 ? "bg-blue-500" : "bg-gray-300"
+                  }`}
+                />
+                <p
+                  className={`text-[11px] font-bold ${
+                    i === 0 ? "text-blue-600" : "text-gray-700"
+                  }`}
+                >
+                  {STATUS_LABEL[ev.status]}
+                </p>
+                <p className="text-[11px] text-gray-500 leading-relaxed">{ev.note}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {new Date(ev.at).toLocaleString("ja-JP")}
+                </p>
+              </li>
+            ))}
+            {app.events.length === 0 && (
+              <li className="text-[11px] text-gray-400">イベントはありません</li>
+            )}
+          </ol>
+        </div>
+      </div>
+    </ModalShell>
   );
 }
 
@@ -949,79 +1509,156 @@ function ApplicationsTab() {
 // =================================================================
 function LeadsTab() {
   const [bump, setBump] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const leads = useMemo<BusinessLead[]>(
     () => (typeof window === "undefined" ? [] : getLocalLeads()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [bump]
   );
+  const visible = useMemo(
+    () => (statusFilter === "all" ? leads : leads.filter((l) => (l.status ?? "new") === statusFilter)),
+    [leads, statusFilter]
+  );
+
+  function refresh() {
+    setBump((b) => b + 1);
+  }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[12px] text-gray-500">
-          /business のお問い合わせフォームから受け付けたリード
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              const csv = leadsToCsv(leads);
-              const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `swiply-leads-${new Date().toISOString().slice(0, 10)}.csv`;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-            disabled={leads.length === 0}
-            className="px-3 h-9 rounded-xl bg-gray-100 text-gray-700 text-[12px] font-bold disabled:opacity-50"
-          >
-            CSV書き出し
-          </button>
-          <button
-            onClick={() => {
-              if (!confirm("リード履歴をすべて削除しますか？")) return;
-              localStorage.removeItem("swiply-business-leads");
-              setBump((b) => b + 1);
-            }}
-            disabled={leads.length === 0}
-            className="px-3 h-9 rounded-xl bg-rose-50 text-rose-600 text-[12px] font-bold disabled:opacity-50"
-          >
-            全削除
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <FilterPill
+          active={statusFilter === "all"}
+          onClick={() => setStatusFilter("all")}
+          label={`すべて (${leads.length})`}
+        />
+        {(Object.keys(LEAD_STATUS_LABEL) as LeadStatus[]).map((s) => {
+          const count = leads.filter((l) => (l.status ?? "new") === s).length;
+          return (
+            <FilterPill
+              key={s}
+              active={statusFilter === s}
+              onClick={() => setStatusFilter(s)}
+              label={`${LEAD_STATUS_LABEL[s]} (${count})`}
+            />
+          );
+        })}
+        <div className="flex-1" />
+        <button
+          onClick={() => {
+            const csv = leadsToCsv(leads);
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `swiply-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          disabled={leads.length === 0}
+          className="px-3 h-9 rounded-xl bg-gray-100 text-gray-700 text-[12px] font-bold disabled:opacity-50"
+        >
+          CSV書き出し
+        </button>
       </div>
 
       {leads.length === 0 ? (
         <EmptyPanel text="まだリードがありません。/business のフォームから問い合わせがあるとここに表示されます。" />
+      ) : visible.length === 0 ? (
+        <EmptyPanel text="このステータスのリードはありません" />
       ) : (
         <div className="space-y-3">
-          {leads.map((l) => (
-            <div key={l.id} className="bg-white rounded-2xl border border-gray-100 p-4 md:p-5">
-              <div className="flex items-start justify-between gap-3 flex-wrap">
-                <div>
-                  <h3 className="text-sm font-extrabold text-gray-900">{l.company}</h3>
-                  <p className="text-[12px] text-gray-500">
-                    {l.contactName} ／ <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline">{l.email}</a>
-                    {l.phone && <> ／ {l.phone}</>}
-                  </p>
+          {visible.map((l) => {
+            const status = l.status ?? "new";
+            return (
+              <div
+                key={l.id}
+                className="bg-white rounded-2xl border border-gray-100 p-4 md:p-5"
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h3 className="text-sm font-extrabold text-gray-900">{l.company}</h3>
+                      <span
+                        className={`px-2 py-0.5 rounded border text-[10px] font-bold ${LEAD_STATUS_TONE[status]}`}
+                      >
+                        {LEAD_STATUS_LABEL[status]}
+                      </span>
+                    </div>
+                    <p className="text-[12px] text-gray-500">
+                      {l.contactName} ／{" "}
+                      <a href={`mailto:${l.email}`} className="text-blue-600 hover:underline">
+                        {l.email}
+                      </a>
+                      {l.phone && <> ／ {l.phone}</>}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-gray-400 whitespace-nowrap">
+                      受付: {new Date(l.submittedAt).toLocaleString("ja-JP")}
+                    </p>
+                    {l.updatedAt && (
+                      <p className="text-[10px] text-gray-400 whitespace-nowrap">
+                        更新: {new Date(l.updatedAt).toLocaleString("ja-JP")}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] text-gray-400 whitespace-nowrap">
-                  {new Date(l.submittedAt).toLocaleString("ja-JP")}
-                </p>
+
+                <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-gray-500">
+                  {l.industry && <Tag color="cyan">業種: {l.industry}</Tag>}
+                  {l.size && <Tag color="violet">規模: {l.size}</Tag>}
+                  {l.plan && <Tag color="amber">希望: {l.plan}</Tag>}
+                </div>
+
+                {l.message && (
+                  <p className="text-[12px] text-gray-700 leading-relaxed mt-3 bg-gray-50 rounded-xl p-3 whitespace-pre-wrap">
+                    {l.message}
+                  </p>
+                )}
+
+                <div className="mt-3 grid md:grid-cols-[180px_1fr_auto] gap-2 items-start">
+                  <select
+                    value={status}
+                    onChange={(e) => {
+                      adminUpdateLead(l.id, { status: e.target.value as LeadStatus });
+                      refresh();
+                    }}
+                    className={inputClass}
+                  >
+                    {(Object.keys(LEAD_STATUS_LABEL) as LeadStatus[]).map((s) => (
+                      <option key={s} value={s}>
+                        {LEAD_STATUS_LABEL[s]}
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    rows={2}
+                    placeholder="営業メモ（私的）— 通話履歴、次のアクション、案件状況など"
+                    defaultValue={l.notes ?? ""}
+                    onBlur={(e) => {
+                      const next = e.target.value;
+                      if (next !== (l.notes ?? "")) {
+                        adminUpdateLead(l.id, { notes: next });
+                        refresh();
+                      }
+                    }}
+                    className={`${inputClass} resize-none text-[12px]`}
+                  />
+                  <button
+                    onClick={() => {
+                      if (!confirm(`「${l.company}」のリードを削除しますか？`)) return;
+                      adminDeleteLead(l.id);
+                      refresh();
+                    }}
+                    className="px-3 h-10 rounded-xl bg-rose-50 text-rose-600 text-[12px] font-bold hover:bg-rose-100 whitespace-nowrap"
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 mt-2 text-[11px] text-gray-500">
-                {l.industry && <Tag color="cyan">業種: {l.industry}</Tag>}
-                {l.size && <Tag color="violet">規模: {l.size}</Tag>}
-                {l.plan && <Tag color="amber">希望: {l.plan}</Tag>}
-              </div>
-              {l.message && (
-                <p className="text-[12px] text-gray-700 leading-relaxed mt-3 bg-gray-50 rounded-xl p-3 whitespace-pre-wrap">
-                  {l.message}
-                </p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -1203,6 +1840,572 @@ function StatusBadge({ status }: { status: UserProfile["kyc"]["status"] }) {
 // =================================================================
 // Tab: Settings
 // =================================================================
+// =================================================================
+// Tab: Notifications (full CRUD over consumer notifications service)
+// =================================================================
+function NotificationsTab() {
+  const [bump, setBump] = useState(0);
+  const items = useMemo<Notification[]>(
+    () => (typeof window === "undefined" ? [] : getNotifications()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bump]
+  );
+  const [editing, setEditing] = useState<Notification | null>(null);
+  const [creating, setCreating] = useState(false);
+  const refresh = () => setBump((b) => b + 1);
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <p className="text-[12px] text-gray-500 mr-auto">
+          ユーザー側 <code>/notifications</code> に表示されるお知らせを管理します
+        </p>
+        <button
+          onClick={() => {
+            if (!confirm("通知をデモ初期データにリセットしますか？")) return;
+            adminResetNotifications();
+            refresh();
+          }}
+          className="px-3 h-9 rounded-xl bg-gray-100 text-gray-700 text-[12px] font-bold"
+        >
+          初期化
+        </button>
+        <button
+          onClick={() => {
+            if (!confirm("すべての通知を削除しますか？")) return;
+            adminClearNotifications();
+            refresh();
+          }}
+          disabled={items.length === 0}
+          className="px-3 h-9 rounded-xl bg-rose-50 text-rose-600 text-[12px] font-bold disabled:opacity-50"
+        >
+          全削除
+        </button>
+        <button
+          onClick={() => setCreating(true)}
+          className="px-4 h-9 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] font-extrabold shadow-md"
+        >
+          + 新規作成
+        </button>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyPanel text="通知がありません" />
+      ) : (
+        <div className="space-y-2">
+          {items.map((n) => (
+            <div
+              key={n.id}
+              className="bg-white border border-gray-100 rounded-2xl p-4 flex items-start gap-3"
+            >
+              <span
+                className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-bold ${TYPE_COLOR[n.type]}`}
+              >
+                {TYPE_LABEL[n.type]}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-[13px] font-bold text-gray-900">{n.title}</h3>
+                  {!n.read && (
+                    <span className="text-[9px] font-bold text-violet-600">●未読</span>
+                  )}
+                </div>
+                <p className="text-[12px] text-gray-600 leading-relaxed mt-1">
+                  {n.body}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-1">
+                  {new Date(n.createdAt).toLocaleString("ja-JP")}
+                  {n.href && (
+                    <>
+                      {" / "}
+                      <span className="font-mono">{n.href}</span>
+                    </>
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setEditing(n)}
+                  className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold"
+                >
+                  編集
+                </button>
+                <button
+                  onClick={() => {
+                    if (!confirm("削除しますか？")) return;
+                    adminDeleteNotification(n.id);
+                    refresh();
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold"
+                >
+                  削除
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(editing || creating) && (
+        <NotificationEditModal
+          notification={editing ?? undefined}
+          onClose={() => {
+            setEditing(null);
+            setCreating(false);
+          }}
+          onSave={(payload) => {
+            if (editing) {
+              adminUpdateNotification(editing.id, payload);
+            } else {
+              adminCreateNotification(payload);
+            }
+            setEditing(null);
+            setCreating(false);
+            refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function NotificationEditModal({
+  notification,
+  onClose,
+  onSave,
+}: {
+  notification?: Notification;
+  onClose: () => void;
+  onSave: (n: {
+    type: NotificationType;
+    title: string;
+    body: string;
+    href?: string;
+    read?: boolean;
+  }) => void;
+}) {
+  const [type, setType] = useState<NotificationType>(notification?.type ?? "system");
+  const [title, setTitle] = useState(notification?.title ?? "");
+  const [body, setBody] = useState(notification?.body ?? "");
+  const [href, setHref] = useState(notification?.href ?? "");
+  const [read, setRead] = useState(notification?.read ?? false);
+
+  return (
+    <ModalShell
+      title={notification ? "通知を編集" : "通知を新規作成"}
+      onClose={onClose}
+    >
+      <div className="space-y-3">
+        <Field label="タイプ">
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value as NotificationType)}
+            className={inputClass}
+          >
+            {(Object.keys(TYPE_LABEL) as NotificationType[]).map((t) => (
+              <option key={t} value={t}>
+                {TYPE_LABEL[t]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="タイトル">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="本文">
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            className={`${inputClass} resize-none`}
+          />
+        </Field>
+        <Field label="リンク先（任意）">
+          <input
+            value={href}
+            onChange={(e) => setHref(e.target.value)}
+            className={inputClass}
+            placeholder="例: /applications  または  /search?q=cafe"
+          />
+        </Field>
+        {notification && (
+          <Toggle
+            label="既読"
+            on={read}
+            onChange={setRead}
+          />
+        )}
+      </div>
+
+      <div className="flex gap-2 mt-6">
+        <button
+          onClick={onClose}
+          className="flex-1 h-11 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm"
+        >
+          キャンセル
+        </button>
+        <button
+          onClick={() => {
+            if (!title.trim() || !body.trim()) {
+              alert("タイトルと本文は必須です");
+              return;
+            }
+            onSave({
+              type,
+              title: title.trim(),
+              body: body.trim(),
+              href: href.trim() || undefined,
+              read: notification ? read : false,
+            });
+          }}
+          className="flex-1 h-11 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white font-extrabold text-sm shadow-md"
+        >
+          {notification ? "保存" : "作成"}
+        </button>
+      </div>
+    </ModalShell>
+  );
+}
+
+// =================================================================
+// Tab: Profile editing (current browser's user)
+// =================================================================
+function ProfileTab() {
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProfile().then(setProfile);
+  }, []);
+
+  if (!profile) return <EmptyPanel text="読み込み中…" />;
+
+  function patch<K extends keyof UserProfile>(k: K, v: UserProfile[K]) {
+    setProfile((p) => (p ? { ...p, [k]: v } : p));
+  }
+
+  async function save() {
+    if (!profile) return;
+    await saveProfile(profile);
+    setSavedAt(new Date().toLocaleTimeString("ja-JP"));
+  }
+
+  return (
+    <div className="max-w-3xl space-y-4">
+      <p className="text-[12px] text-gray-500">
+        このブラウザに紐づくユーザーのプロフィール。テスト用に直接編集できます。
+      </p>
+
+      <div className="bg-white rounded-2xl border border-gray-100 p-5 md:p-6 space-y-4">
+        <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase">
+          基本情報
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <Field label="名前">
+            <input
+              className={inputClass}
+              value={profile.name}
+              onChange={(e) => patch("name", e.target.value)}
+            />
+          </Field>
+          <Field label="居住地">
+            <input
+              className={inputClass}
+              value={profile.location}
+              onChange={(e) => patch("location", e.target.value)}
+            />
+          </Field>
+          <Field label="年齢">
+            <input
+              className={inputClass}
+              value={profile.age}
+              onChange={(e) => patch("age", e.target.value)}
+            />
+          </Field>
+          <Field label="性別">
+            <select
+              className={inputClass}
+              value={profile.gender}
+              onChange={(e) => patch("gender", e.target.value)}
+            >
+              <option value="">未指定</option>
+              <option value="male">男性</option>
+              <option value="female">女性</option>
+              <option value="other">その他</option>
+              <option value="private">回答しない</option>
+            </select>
+          </Field>
+        </div>
+
+        <Field label="自己紹介">
+          <textarea
+            className={`${inputClass} resize-y min-h-[100px]`}
+            rows={4}
+            value={profile.selfIntro}
+            onChange={(e) => patch("selfIntro", e.target.value)}
+          />
+        </Field>
+
+        <ListEditor
+          label="趣味"
+          items={profile.hobbies}
+          onChange={(v) => patch("hobbies", v)}
+        />
+        <ListEditor
+          label="スキル"
+          items={profile.skills}
+          onChange={(v) => patch("skills", v)}
+        />
+
+        <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase pt-2">
+          経歴
+        </p>
+        <Field label="最終学歴">
+          <input
+            className={inputClass}
+            value={profile.education}
+            onChange={(e) => patch("education", e.target.value)}
+          />
+        </Field>
+        <Field label="職務経験">
+          <input
+            className={inputClass}
+            value={profile.experience}
+            onChange={(e) => patch("experience", e.target.value)}
+          />
+        </Field>
+
+        <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase pt-2">
+          希望条件
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <Field label="希望雇用形態">
+            <select
+              className={inputClass}
+              value={profile.desiredJobType}
+              onChange={(e) =>
+                patch("desiredJobType", e.target.value as UserProfile["desiredJobType"])
+              }
+            >
+              <option value="baito">バイト</option>
+              <option value="gig">単発</option>
+              <option value="career">正社員</option>
+              <option value="both">ぜんぶ</option>
+            </select>
+          </Field>
+          <Field label="希望最低給与">
+            <input
+              className={inputClass}
+              value={profile.desiredMinSalary}
+              onChange={(e) => patch("desiredMinSalary", e.target.value)}
+            />
+          </Field>
+        </div>
+        <ListEditor
+          label="希望カテゴリ"
+          items={profile.desiredCategories}
+          onChange={(v) => patch("desiredCategories", v)}
+        />
+        <ListEditor
+          label="希望勤務地"
+          items={profile.desiredLocations}
+          onChange={(v) => patch("desiredLocations", v)}
+        />
+
+        <p className="text-[10px] tracking-wider font-bold text-gray-500 uppercase pt-2">
+          フラグ
+        </p>
+        <div className="grid md:grid-cols-2 gap-3">
+          <Toggle
+            label="オンボーディング完了"
+            on={profile.onboarded}
+            onChange={(v) => patch("onboarded", v)}
+          />
+          <Toggle
+            label="新着マッチ通知"
+            on={profile.notifyNewMatches}
+            onChange={(v) => patch("notifyNewMatches", v)}
+          />
+        </div>
+
+        <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
+          <button
+            onClick={save}
+            className="px-5 h-10 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[13px] font-extrabold shadow-md"
+          >
+            プロフィールを保存
+          </button>
+          <button
+            onClick={async () => {
+              if (!confirm("プロフィールを初期化しますか？")) return;
+              await saveProfile(defaultProfile);
+              setProfile(defaultProfile);
+              setSavedAt(new Date().toLocaleTimeString("ja-JP"));
+            }}
+            className="px-3 h-10 rounded-xl bg-rose-50 text-rose-600 text-[12px] font-bold"
+          >
+            初期化
+          </button>
+          {savedAt && (
+            <span className="text-[11px] text-emerald-600">
+              ✓ 保存しました ({savedAt})
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =================================================================
+// Tab: Engagement (LIKE / Recently viewed)
+// =================================================================
+function EngagementTab() {
+  const [bump, setBump] = useState(0);
+  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const recentIds = useMemo<string[]>(
+    () => (typeof window === "undefined" ? [] : getRecentlyViewedIds()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bump]
+  );
+  const allJobs = useMemo<Job[]>(
+    () => (typeof window === "undefined" ? [] : getMergedJobs()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bump]
+  );
+
+  useEffect(() => {
+    getLikedJobIds().then(setLikedIds);
+  }, [bump]);
+
+  const liked = likedIds
+    .map((id) => allJobs.find((j) => j.id === id))
+    .filter((j): j is Job => !!j);
+  const recent = recentIds
+    .map((id) => allJobs.find((j) => j.id === id))
+    .filter((j): j is Job => !!j);
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-extrabold text-gray-900">LIKE した求人</h3>
+            <p className="text-[11px] text-gray-500">
+              現在のブラウザのユーザーがLIKEした求人 ({liked.length}件)
+            </p>
+          </div>
+        </div>
+        {liked.length === 0 ? (
+          <p className="text-center text-gray-400 text-[12px] py-8">
+            LIKEされた求人はありません
+          </p>
+        ) : (
+          <ul className="divide-y divide-gray-50">
+            {liked.map((j) => (
+              <li
+                key={j.id}
+                className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50/40"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={j.image}
+                  alt=""
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-bold text-gray-900 line-clamp-1">
+                    {j.company}
+                  </p>
+                  <p className="text-[11px] text-gray-500 line-clamp-1">{j.title}</p>
+                </div>
+                <a
+                  href={`/job/${j.id}/`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-blue-600 hover:underline whitespace-nowrap"
+                >
+                  表示
+                </a>
+                <button
+                  onClick={async () => {
+                    await removeLike(j.id);
+                    setBump((b) => b + 1);
+                  }}
+                  className="text-[11px] text-rose-500 hover:underline whitespace-nowrap"
+                >
+                  LIKE 解除
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-extrabold text-gray-900">最近見た求人</h3>
+            <p className="text-[11px] text-gray-500">
+              閲覧履歴 ({recent.length}件 / 最大12件)
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              if (!confirm("閲覧履歴を消去しますか？")) return;
+              clearRecentlyViewed();
+              setBump((b) => b + 1);
+            }}
+            disabled={recent.length === 0}
+            className="text-[11px] font-bold text-rose-500 hover:underline disabled:opacity-50"
+          >
+            履歴をクリア
+          </button>
+        </div>
+        {recent.length === 0 ? (
+          <p className="text-center text-gray-400 text-[12px] py-8">
+            閲覧履歴はありません
+          </p>
+        ) : (
+          <ul className="divide-y divide-gray-50">
+            {recent.map((j) => (
+              <li
+                key={j.id}
+                className="px-5 py-3 flex items-center gap-3 hover:bg-gray-50/40"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={j.image}
+                  alt=""
+                  className="w-10 h-10 rounded-lg object-cover"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-bold text-gray-900 line-clamp-1">
+                    {j.company}
+                  </p>
+                  <p className="text-[11px] text-gray-500 line-clamp-1">{j.title}</p>
+                </div>
+                <a
+                  href={`/job/${j.id}/`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-blue-600 hover:underline whitespace-nowrap"
+                >
+                  表示
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SettingsTab({ onAfterReset }: { onAfterReset: () => void }) {
   const [email, setEmail] = useState(() =>
     typeof window === "undefined" ? "" : getAdminEmail()
@@ -1597,6 +2800,27 @@ function IconCog() {
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+function IconBell() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+  );
+}
+function IconUser() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    </svg>
+  );
+}
+function IconHeart() {
+  return (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
     </svg>
   );
 }

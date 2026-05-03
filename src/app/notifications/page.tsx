@@ -1,73 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
+import {
+  type Notification,
+  type NotificationType,
+  getNotifications,
+  markAllRead,
+  markRead,
+} from "@/lib/services/notifications";
 import { haptic } from "@/lib/haptic";
 
-type NotifType = "new" | "like" | "system" | "application";
-
-interface Notification {
-  id: string;
-  type: NotifType;
-  title: string;
-  body: string;
-  time: string;
-  read: boolean;
-  href?: string;
-}
-
-const SEED: Notification[] = [
-  {
-    id: "1",
-    type: "application",
-    title: "応募が選考中になりました",
-    body: "「カフェ ブルーム」のステータスが書類選考中に更新されました。",
-    time: "1時間前",
-    read: false,
-    href: "/applications",
-  },
-  {
-    id: "2",
-    type: "new",
-    title: "新着求人が3件追加されました",
-    body: "あなたの希望条件にマッチする求人が新たに掲載されました。",
-    time: "2時間前",
-    read: false,
-    href: "/search",
-  },
-  {
-    id: "3",
-    type: "like",
-    title: "LIKE した求人が更新されました",
-    body: "カフェ ブルームの求人情報が更新されました。",
-    time: "3時間前",
-    read: false,
-    href: "/likes",
-  },
-  {
-    id: "4",
-    type: "system",
-    title: "プロフィールを完成させましょう",
-    body: "プロフィールを充実させると、企業からのスカウト率がアップします。",
-    time: "1日前",
-    read: true,
-    href: "/profile",
-  },
-  {
-    id: "5",
-    type: "new",
-    title: "おすすめ求人があります",
-    body: "フロントエンドエンジニアの求人があなたにおすすめです。",
-    time: "2日前",
-    read: true,
-    href: "/search",
-  },
-];
-
-const typeIcon: Record<NotifType, React.ReactNode> = {
+const typeIcon: Record<NotificationType, React.ReactNode> = {
   new: (
     <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
       <svg className="w-5 h-5 text-violet-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,17 +45,39 @@ const typeIcon: Record<NotifType, React.ReactNode> = {
   ),
 };
 
+function relativeTime(iso: string): string {
+  const diff = Date.now() - Date.parse(iso);
+  if (Number.isNaN(diff)) return "";
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "たった今";
+  if (m < 60) return `${m}分前`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}時間前`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}日前`;
+  return new Date(iso).toLocaleDateString("ja-JP");
+}
+
 export default function NotificationsPage() {
-  const [items, setItems] = useState<Notification[]>(SEED);
+  const [items, setItems] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    // Sync from external source (localStorage) on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setItems(getNotifications());
+  }, []);
+
   const unread = items.filter((n) => !n.read).length;
 
-  function markAllRead() {
+  function handleMarkAllRead() {
     haptic("tick");
-    setItems((prev) => prev.map((n) => ({ ...n, read: true })));
+    markAllRead();
+    setItems(getNotifications());
   }
 
-  function markRead(id: string) {
-    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+  function handleClickItem(id: string) {
+    markRead(id);
+    setItems(getNotifications());
   }
 
   return (
@@ -124,7 +93,7 @@ export default function NotificationsPage() {
           </div>
           {unread > 0 && (
             <button
-              onClick={markAllRead}
+              onClick={handleMarkAllRead}
               className="text-[11px] font-bold text-violet-600 hover:underline"
             >
               すべて既読にする
@@ -160,16 +129,16 @@ export default function NotificationsPage() {
                       )}
                     </div>
                     <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">{n.body}</p>
-                    <p className="text-[10px] text-gray-300 mt-1.5">{n.time}</p>
+                    <p className="text-[10px] text-gray-300 mt-1.5">{relativeTime(n.createdAt)}</p>
                   </div>
                 </div>
               );
               return n.href ? (
-                <Link key={n.id} href={n.href} onClick={() => markRead(n.id)}>
+                <Link key={n.id} href={n.href} onClick={() => handleClickItem(n.id)}>
                   {card}
                 </Link>
               ) : (
-                <button key={n.id} onClick={() => markRead(n.id)} className="w-full text-left">
+                <button key={n.id} onClick={() => handleClickItem(n.id)} className="w-full text-left">
                   {card}
                 </button>
               );
