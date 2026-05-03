@@ -16,7 +16,16 @@
  * receive the user's email in the ID token.
  */
 
-const CHANNEL_ID = process.env.NEXT_PUBLIC_LINE_CHANNEL_ID ?? "";
+/**
+ * SWIPLY's LINE Login channel ID. The Channel ID is public info — it
+ * appears in the OAuth authorize URL anyway — so it's safe to ship in
+ * the source. Override locally by setting NEXT_PUBLIC_LINE_CHANNEL_ID
+ * in `.env.local` if testing against a different channel.
+ *
+ * Channel: "SWIPLY" (developers.line.biz/console)
+ */
+const DEFAULT_CHANNEL_ID = "2005114375";
+const CHANNEL_ID = process.env.NEXT_PUBLIC_LINE_CHANNEL_ID || DEFAULT_CHANNEL_ID;
 const CALLBACK_PATH = "/login/line/callback";
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
