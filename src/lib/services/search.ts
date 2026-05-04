@@ -19,14 +19,105 @@ export interface JobFilters {
   sort?: SortKey;
 }
 
+/**
+ * Prefectures grouped by traditional 8 region. Used by the onboarding
+ * modal and (collapsed) by the filter sheet.
+ */
+export const PREFECTURE_GROUPS: {
+  region: string;
+  prefectures: { value: string; label: string }[];
+}[] = [
+  {
+    region: "北海道・東北",
+    prefectures: [
+      { value: "hokkaido", label: "北海道" },
+      { value: "aomori", label: "青森" },
+      { value: "iwate", label: "岩手" },
+      { value: "miyagi", label: "宮城" },
+      { value: "akita", label: "秋田" },
+      { value: "yamagata", label: "山形" },
+      { value: "fukushima", label: "福島" },
+    ],
+  },
+  {
+    region: "関東",
+    prefectures: [
+      { value: "tokyo", label: "東京" },
+      { value: "kanagawa", label: "神奈川" },
+      { value: "saitama", label: "埼玉" },
+      { value: "chiba", label: "千葉" },
+      { value: "ibaraki", label: "茨城" },
+      { value: "tochigi", label: "栃木" },
+      { value: "gunma", label: "群馬" },
+    ],
+  },
+  {
+    region: "中部",
+    prefectures: [
+      { value: "niigata", label: "新潟" },
+      { value: "toyama", label: "富山" },
+      { value: "ishikawa", label: "石川" },
+      { value: "fukui", label: "福井" },
+      { value: "yamanashi", label: "山梨" },
+      { value: "nagano", label: "長野" },
+      { value: "gifu", label: "岐阜" },
+      { value: "shizuoka", label: "静岡" },
+      { value: "aichi", label: "愛知" },
+    ],
+  },
+  {
+    region: "近畿",
+    prefectures: [
+      { value: "mie", label: "三重" },
+      { value: "shiga", label: "滋賀" },
+      { value: "kyoto", label: "京都" },
+      { value: "osaka", label: "大阪" },
+      { value: "hyogo", label: "兵庫" },
+      { value: "nara", label: "奈良" },
+      { value: "wakayama", label: "和歌山" },
+    ],
+  },
+  {
+    region: "中国",
+    prefectures: [
+      { value: "tottori", label: "鳥取" },
+      { value: "shimane", label: "島根" },
+      { value: "okayama", label: "岡山" },
+      { value: "hiroshima", label: "広島" },
+      { value: "yamaguchi", label: "山口" },
+    ],
+  },
+  {
+    region: "四国",
+    prefectures: [
+      { value: "tokushima", label: "徳島" },
+      { value: "kagawa", label: "香川" },
+      { value: "ehime", label: "愛媛" },
+      { value: "kochi", label: "高知" },
+    ],
+  },
+  {
+    region: "九州・沖縄",
+    prefectures: [
+      { value: "fukuoka", label: "福岡" },
+      { value: "saga", label: "佐賀" },
+      { value: "nagasaki", label: "長崎" },
+      { value: "kumamoto", label: "熊本" },
+      { value: "oita", label: "大分" },
+      { value: "miyazaki", label: "宮崎" },
+      { value: "kagoshima", label: "鹿児島" },
+      { value: "okinawa", label: "沖縄" },
+    ],
+  },
+  {
+    region: "在宅",
+    prefectures: [{ value: "remote", label: "在宅・フルリモート" }],
+  },
+];
+
 export const REGION_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "すべて" },
-  { value: "tokyo", label: "東京" },
-  { value: "kanagawa", label: "神奈川" },
-  { value: "saitama", label: "埼玉" },
-  { value: "chiba", label: "千葉" },
-  { value: "osaka", label: "大阪" },
-  { value: "remote", label: "在宅" },
+  ...PREFECTURE_GROUPS.flatMap((g) => g.prefectures),
 ];
 
 export const CATEGORY_OPTIONS: { value: string; label: string; emoji: string }[] = [

@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  REGION_OPTIONS,
   CATEGORY_OPTIONS,
+  PREFECTURE_GROUPS,
   type JobFilters,
 } from "@/lib/services/search";
 import { haptic } from "@/lib/haptic";
@@ -126,11 +126,25 @@ export default function FilterSheet({
               )}
 
               <Section title="エリア">
-                <Pills
+                <select
                   value={draft.region ?? "all"}
-                  options={REGION_OPTIONS}
-                  onChange={(v) => set("region", v)}
-                />
+                  onChange={(e) => {
+                    haptic("tick");
+                    set("region", e.target.value);
+                  }}
+                  className="w-full px-3.5 py-3 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                >
+                  <option value="all">すべて</option>
+                  {PREFECTURE_GROUPS.map((g) => (
+                    <optgroup key={g.region} label={g.region}>
+                      {g.prefectures.map((p) => (
+                        <option key={p.value} value={p.value}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </Section>
 
               <Section title="カテゴリ">
