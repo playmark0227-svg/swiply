@@ -8,6 +8,7 @@ import JobCard from "./JobCard";
 import Logo from "./Logo";
 import { Job } from "@/types/job";
 import { addLike, removeLike } from "@/lib/services/likes";
+import { maybeMatch } from "@/lib/services/matches";
 import { useToast } from "./Toast";
 import { haptic } from "@/lib/haptic";
 
@@ -46,9 +47,24 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   }, [handleNext]);
 
   const handleSwipeRight = useCallback(() => {
-    if (currentJob) addLike(currentJob.id);
+    if (currentJob) {
+      addLike(currentJob.id);
+      // Probabilistic mutual match — if it fires, the matches service
+      // creates a Match record + system message + notification, and
+      // schedules an NPC intro reply.
+      const m = maybeMatch({
+        jobId: currentJob.id,
+        jobTitle: currentJob.title,
+        jobCompany: currentJob.company,
+        jobImage: currentJob.image,
+        featured: currentJob.featured,
+      });
+      if (m) {
+        toast.show(`🎉 ${currentJob.company} とマッチしました！`, "success");
+      }
+    }
     handleNext("right");
-  }, [currentJob, handleNext]);
+  }, [currentJob, handleNext, toast]);
 
   const handleSwipeUp = useCallback(() => {
     if (currentJob) {

@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
+import { getTotalUnread, subscribeMatches } from "@/lib/services/matches";
 import { haptic } from "@/lib/haptic";
 
 /**
@@ -21,6 +23,7 @@ const ROOT_PAGES = new Set<string>([
   "/likes",
   "/notifications",
   "/verify",
+  "/messages",
 ]);
 
 const PAGE_TITLE: Record<string, string> = {
@@ -33,6 +36,7 @@ const PAGE_TITLE: Record<string, string> = {
   "/search": "検索",
   "/applications": "応募管理",
   "/verify": "本人確認",
+  "/messages": "メッセージ",
 };
 
 /** Tabs rendered inline in the header on desktop (md+). */
@@ -53,6 +57,14 @@ export default function Header() {
   const normalized = pathname === "/" ? "/" : pathname.replace(/\/$/, "");
   const isRoot = ROOT_PAGES.has(normalized);
   const title = PAGE_TITLE[normalized];
+
+  // Unread message badge
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    const refresh = () => setUnread(getTotalUnread());
+    refresh();
+    return subscribeMatches(refresh);
+  }, []);
 
   function isTabActive(tab: (typeof DESKTOP_TABS)[number]) {
     if (tab.exact) return normalized === tab.href;
@@ -158,6 +170,25 @@ export default function Header() {
             </svg>
           </Link>
           <Link
+            href="/messages"
+            aria-label="メッセージ"
+            onClick={() => haptic("tick")}
+            className={`relative w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-colors ${
+              normalized === "/messages"
+                ? "text-violet-600 bg-violet-50"
+                : "text-gray-400 hover:text-violet-500 hover:bg-violet-50/60"
+            }`}
+          >
+            <svg className="w-[19px] h-[19px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-[10px] font-black tabular-nums flex items-center justify-center ring-2 ring-white">
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
+          </Link>
+          <Link
             href="/notifications"
             aria-label="お知らせ"
             onClick={() => haptic("tick")}
@@ -170,7 +201,6 @@ export default function Header() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
           </Link>
 
           <Link
