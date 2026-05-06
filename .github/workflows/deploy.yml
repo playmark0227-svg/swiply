@@ -33,6 +33,12 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          # Optional: Cloudflare Workers endpoint for LINE push notifications.
+          # Set as a repo Variable (Settings → Secrets and variables → Actions
+          # → Variables) so you don't have to bake the URL into source.
+          # When unset the build still succeeds; the LINE notify UI is
+          # simply hidden at runtime.
+          NEXT_PUBLIC_LINE_NOTIFY_URL: ${{ vars.NEXT_PUBLIC_LINE_NOTIFY_URL }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

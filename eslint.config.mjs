@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Cloudflare Workers project — has its own tsconfig + lint rules
+    // and uses the standard `export default { fetch }` Worker shape.
+    "workers/**",
   ]),
 ]);
 

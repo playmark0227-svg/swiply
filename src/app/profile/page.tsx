@@ -11,6 +11,7 @@ import { getApplications, type Application } from "@/lib/services/applications";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/Toast";
 import { haptic } from "@/lib/haptic";
+import LineNotifySection from "@/components/LineNotifySection";
 
 function computeCompleteness(p: UserProfile): { percent: number; missing: string[] } {
   const checks = [
@@ -509,6 +510,9 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+
+          {/* LINE notification opt-in (rendered only for LIFF/LINE users + when notify URL is set) */}
+          <LineNotifySection uid={auth.session?.uid} />
         </div>
         </div>
         </div>

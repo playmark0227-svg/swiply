@@ -1,0 +1,17 @@
+{
+  "name": "swiply-line-notify",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker that bridges SWIPLY → LINE OA push notifications via code-based pairing.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240605.0",
+    "typescript": "^5.5.0",
+    "wrangler": "^3.65.0"
+  }
+}

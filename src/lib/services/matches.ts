@@ -328,37 +328,49 @@ interface ExternalNotifyPayload {
 }
 
 /**
- * Best-effort LINE push notification. Reads the endpoint URL from
- * NEXT_PUBLIC_LINE_NOTIFY_URL. The endpoint should accept POST with
- * { lineUserId, title, body, href? } and call LINE Messaging API
- * server-side. See COWORK_LINE_NOTIFICATIONS.md for setup.
+ * Best-effort LINE push notification.
+ *
+ * NEXT_PUBLIC_LINE_NOTIFY_URL points at the Cloudflare Workers deployment
+ * (`workers/swiply-line-notify/`). It accepts:
+ *
+ *   POST /notify { recipientLoginUserId, title, body, href? }
+ *
+ * The Workers side looks up `link:{recipientLoginUserId}` in KV — which
+ * is populated only after the user has tapped "LINE通知を有効化" on the
+ * profile screen and sent the pair code in their LINE chat. If the user
+ * hasn't linked, the Worker returns `{ ok: false, reason: "not_linked" }`
+ * with status 200 — we treat that as silent success.
+ *
+ * This function fires-and-forgets: any failure is swallowed so it never
+ * blocks the in-app match flow.
  */
 async function notifyExternalChannel(payload: ExternalNotifyPayload): Promise<void> {
   if (typeof window === "undefined") return;
-  const endpoint = process.env.NEXT_PUBLIC_LINE_NOTIFY_URL;
+  const endpoint = (process.env.NEXT_PUBLIC_LINE_NOTIFY_URL || "").replace(/\/$/, "");
   if (!endpoint) return;
 
-  // Pull the LINE userId from the current session if it exists
-  let lineUserId: string | null = null;
+  // Pull the LINE Login channel userId from the current session.
+  // (uid format: "line-Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+  let recipientLoginUserId: string | null = null;
   try {
     const raw = localStorage.getItem("swiply-session");
     if (raw) {
       const session = JSON.parse(raw) as { uid?: string };
       if (session.uid?.startsWith("line-")) {
-        lineUserId = session.uid.slice("line-".length);
+        recipientLoginUserId = session.uid.slice("line-".length);
       }
     }
   } catch {
     // ignore
   }
-  if (!lineUserId) return;
+  if (!recipientLoginUserId) return;
 
   try {
-    await fetch(endpoint, {
+    await fetch(`${endpoint}/notify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        lineUserId,
+        recipientLoginUserId,
         title: payload.title,
         body: payload.body,
         href: payload.href,

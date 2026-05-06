@@ -2,73 +2,65 @@
 
 ## このタスクの目的
 
-SWIPLY 内のマッチ成立 / メッセージ受信時に、ユーザーの LINE 公式アカウント(SWIPLY)から push 通知を飛ばす。GitHub Pages は静的サイトなので、LINE Messaging API の Channel Access Token を直接ブラウザに置けない。**サーバーレス関数を1つ別途立てる必要がある。**
+SWIPLY 内のマッチ成立 / メッセージ受信時に、ユーザーの LINE 公式アカウント(SWIPLY)から push 通知を飛ばす。
+
+## ⚠️ 重要な前提(LINE 仕様)
+
+LINE は LIFF と Messaging API を **同じチャネルに統合できない仕様**です。Messaging API チャネルでは LIFF が作れず、LINE Login チャネルでは push が送れません。当初検討した「1チャネル統合(選択肢A)」は **物理的に不可能**で、**2チャネル + Account Link API で紐付ける構成**(LINE 公式の標準パターン)が正解でした。
 
 ## 全体構成
 
 ```
-[SWIPLY フロント (GitHub Pages)]
-        │
-        │ POST /notify
-        ▼
-[サーバーレス関数 (Cloudflare Workers 等)]
-        │   verify + 整形
-        │   Channel Access Token を保持
-        ▼
-[LINE Messaging API]
-        │   push message
-        ▼
 [ユーザーの LINE アプリ]
+   ↓ rich menu tap
+[LIFF (Login チャネル 2009964059)]
+   ↓ liff.getProfile() → loginUserId
+[SWIPLY フロント (GitHub Pages)]
+   ↓ POST /notify { recipientLoginUserId, body, ... }
+[Cloudflare Workers]
+   ├── recipientLoginUserId → KV lookup → messagingUserId
+   │     (KV is populated by accountLink webhook below)
+   ↓ POST /v2/bot/message/push
+[LINE Messaging API (Notifier チャネル 2009985261)]
+   ↓ push message
+[ユーザーの LINE トーク]
+
+
+[ユーザーが LIFF 経由でログインした直後の連携フロー]
+
+   SWIPLY が linkToken 発行 API を叩く (Login チャネルの Channel Access Token を使用)
+        ↓
+   linkToken をユーザーに渡し、LINE 公式アカウントとの連携 URL に誘導
+        ↓
+   ユーザーが LINE 上で「許可」をタップ
+        ↓
+   Messaging API チャネルの webhook が `accounts.linked` イベントを受信
+        (loginUserId と messagingUserId が両方含まれる)
+        ↓
+   Workers 側で KV に { loginUserId → messagingUserId } を保存
+        ↓
+   以降、push 通知が送信可能になる
 ```
 
-## 前提状態(完了済み・LIFF_HANDOFF.md と共通)
+## 前提状態(完了済み)
 
-- LIFF 自動ログイン実装済み(別ハンドオフ書 `LIFF_HANDOFF.md` 参照)
-- LINE Login チャネル: SWIPLY (channel ID `2009964059`)
-- LIFF アプリ: ID `2009964059-jcGdt1Nm`、ボットリンク「On (Aggressive)」
-- リッチメニュー: `https://liff.line.me/2009964059-jcGdt1Nm` 設定済み
-- リッチメニューから入るユーザーは自動で友だち追加される(ボットリンク Aggressive のため)
+| 項目 | 状態 | 値 |
+|---|---|---|
+| LIFF 自動ログイン(`LIFF_HANDOFF.md`) | ✅ 完了 | LIFF ID `2009964059-jcGdt1Nm` |
+| LINE Login チャネル(SWIPLY) | ✅ 既存維持 | Channel ID **`2009964059`** |
+| Messaging API チャネル(SWIPLY OA 紐付け) | ✅ 有効化済み | Channel ID **`2009985261`** |
+| Channel Access Token(長期、Notifier チャネル) | ✅ 発行済み | ユーザーが 1Password 等に保管済み |
+| Channel Secret(Notifier チャネル) | ✅ 表示済み | LINE OA Manager → 設定 → Messaging API で再表示可能 |
+| Webhook URL | ⏳ 未設定 | Workers デプロイ後に設定 |
+| リッチメニューURL | ✅ そのまま | `https://liff.line.me/2009964059-jcGdt1Nm` |
+
+**注**: 「Messaging API チャネルを Developers コンソールから新規作成」は LINE 仕様で禁止されました。代わりに **LINE Official Account Manager → 設定 → Messaging API → "Messaging APIを利用する"** で SWIPLY OA に紐付ける形で作ります(完了済み)。
 
 ## 残タスク(順番に実行)
 
-### ① LINE 側の準備
+### ① Cloudflare Workers セットアップ
 
-#### A. Messaging API チャネル作成(既存 Login チャネルとは別物)
-
-push 通知には Messaging API チャネルが必要。手順:
-
-1. https://developers.line.biz/console/ にログイン
-2. 既存の **SWIPLY プロバイダー** を開く
-3. 「チャネル作成」→ **「Messaging API」** を選択
-4. チャネル名(例: `SWIPLY Notifier`)を入力 → 作成
-5. 作成後、左サイドバー **「Messaging API設定」** タブを開く
-6. ページ下部の **「チャネルアクセストークン(長期)」** で **「発行」** ボタンを押す
-7. このトークンをコピー(後で Workers Secret として使う)
-
-#### B. LINE userId の紐付け方針(要決定)
-
-ユーザーが SWIPLY にログインしている userId(LINE Login で取得した `U…` で始まる32文字)と、公式アカウントの友だち userId は **チャネルが違うと別物**。push を送るには両方を紐付ける必要がある。
-
-**選択肢A(推奨・将来性): 1つの Messaging API チャネルに統合**
-- ユーザーが SWIPLY を最初に開く前提で、Messaging API チャネルにも LINE Login 機能を有効化
-- 既存と同じコールバックURL を登録
-- LIFF も Messaging API チャネル側に作り直す
-- **既存の LINE Login チャネルは廃止**(影響範囲: `lineAuth.ts` / `liffAuth.ts` / `.env.local` / GitHub Actions の env)
-- メリット: userId が完全に一致するので紐付け不要
-
-**選択肢B(最小工数): フォローイベントで userId 紐付けを KV に保存**
-- ユーザーが「友だち追加」した時点で Messaging API は webhook で userId を通知
-- それを KV(Cloudflare KV / Vercel KV / Upstash Redis 等)に保存
-- SWIPLY 側のユーザー(メールや LINE Login userId)と紐付けるためのマッピングテーブルを別途用意
-- **マッピングが取れたユーザーだけに push する**設計が簡単
-
-**Claude Code への指示**: 選択肢を確認してから着手すること。デフォルトは選択肢B(最小工数)で進めて、push が動くようになってから A への移行を検討する流れ。
-
-### ② サーバーレス関数を立てる(Cloudflare Workers 推奨)
-
-無料枠で十分動く(後述のコスト目安参照)。
-
-#### セットアップ
+#### 1-1. プロジェクト作成
 
 ```bash
 npm install -g wrangler
@@ -79,7 +71,14 @@ npm init -y
 npm install
 ```
 
-#### `wrangler.toml`
+#### 1-2. KV namespace 作成
+
+```bash
+wrangler kv namespace create LINK_MAP
+# 出力に表示される id をメモ → wrangler.toml の kv_namespaces.id に貼る
+```
+
+#### 1-3. `wrangler.toml`
 
 ```toml
 name = "swiply-line-notify"
@@ -88,169 +87,355 @@ compatibility_date = "2026-05-01"
 
 [vars]
 ALLOW_ORIGIN = "https://playmark0227-svg.github.io"
+LINE_LOGIN_CHANNEL_ID   = "2009964059"
+LINE_MSG_CHANNEL_ID     = "2009985261"
+LINE_MSG_CHANNEL_SECRET = ""    # 後述: webhook 署名検証用。secret に置きたい場合は削除して `wrangler secret put` で登録
 
-# Channel Access Token は Secret として登録(後述)
+[[kv_namespaces]]
+binding = "LINK_MAP"
+id = "<wrangler kv namespace create で取得したID>"
+
+# Channel Access Token(長期)— 必ず Secret として登録(ファイルに直書きしない):
+#   wrangler secret put LINE_MSG_ACCESS_TOKEN
+# Channel Secret も Secret として登録(webhook 署名検証用):
+#   wrangler secret put LINE_MSG_CHANNEL_SECRET
 ```
 
-#### `src/index.ts`
+#### 1-4. `src/index.ts`
+
+3つのエンドポイントを実装:
+
+- `POST /notify` — フロントから呼ばれる push 送信エンドポイント
+- `POST /linkToken` — LIFF からアカウント連携のために linkToken を取得
+- `POST /webhook` — Messaging API からの webhook(アカウント連携イベント等)
 
 ```typescript
 export interface Env {
-  LINE_CHANNEL_ACCESS_TOKEN: string;
-  ALLOW_ORIGIN: string;
+  LINE_MSG_ACCESS_TOKEN: string;       // Secret
+  LINE_MSG_CHANNEL_SECRET: string;     // Secret
+  LINE_LOGIN_CHANNEL_ID: string;       // Var
+  LINE_MSG_CHANNEL_ID: string;         // Var
+  ALLOW_ORIGIN: string;                // Var
+  LINK_MAP: KVNamespace;
 }
 
-interface PushPayload {
-  lineUserId: string;
-  title: string;
+interface NotifyPayload {
+  recipientLoginUserId: string;        // U... (Login channel userId)
+  title?: string;
   body: string;
   href?: string;
+}
+
+interface LinkTokenPayload {
+  loginUserId: string;                 // 連携をリクエストするユーザーの Login チャネルでの userId
 }
 
 export default {
   async fetch(req: Request, env: Env): Promise<Response> {
-    const cors = {
-      "Access-Control-Allow-Origin": env.ALLOW_ORIGIN,
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-    };
+    const url = new URL(req.url);
+    const cors = corsHeaders(env.ALLOW_ORIGIN);
 
     if (req.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
-    if (req.method !== "POST") {
-      return new Response("Method Not Allowed", { status: 405, headers: cors });
+
+    if (url.pathname === "/notify" && req.method === "POST") {
+      return handleNotify(req, env, cors);
     }
-
-    let payload: PushPayload;
-    try {
-      payload = await req.json();
-    } catch {
-      return new Response("Invalid JSON", { status: 400, headers: cors });
+    if (url.pathname === "/linkToken" && req.method === "POST") {
+      return handleLinkToken(req, env, cors);
     }
-
-    if (!payload.lineUserId || !payload.body) {
-      return new Response("lineUserId と body は必須", { status: 400, headers: cors });
+    if (url.pathname === "/webhook" && req.method === "POST") {
+      return handleWebhook(req, env);  // CORS 不要 (LINE からのサーバー間呼び出し)
     }
-
-    const text = payload.title
-      ? `【${payload.title}】\n${payload.body}`
-      : payload.body;
-
-    const res = await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`,
-      },
-      body: JSON.stringify({
-        to: payload.lineUserId,
-        messages: [
-          {
-            type: "text",
-            text:
-              text +
-              (payload.href
-                ? `\n\n👉 https://playmark0227-svg.github.io/swiply${payload.href}`
-                : ""),
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      const detail = await res.text();
-      return new Response(`LINE API error: ${detail}`, {
-        status: 502,
-        headers: cors,
-      });
-    }
-
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...cors, "Content-Type": "application/json" },
-    });
+    return new Response("Not found", { status: 404, headers: cors });
   },
 };
+
+function corsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
+
+async function handleNotify(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  let payload: NotifyPayload;
+  try {
+    payload = await req.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400, headers: cors });
+  }
+  if (!payload.recipientLoginUserId || !payload.body) {
+    return new Response("recipientLoginUserId と body は必須", { status: 400, headers: cors });
+  }
+
+  // Login userId → Messaging userId 変換
+  const messagingUserId = await env.LINK_MAP.get(payload.recipientLoginUserId);
+  if (!messagingUserId) {
+    // 紐付け未完了 — push できない。201 で「届けられないがエラーではない」を表現
+    return new Response(JSON.stringify({ ok: false, reason: "not_linked" }), {
+      status: 201,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  const text = payload.title
+    ? `【${payload.title}】\n${payload.body}`
+    : payload.body;
+  const fullText = payload.href
+    ? `${text}\n\n👉 https://playmark0227-svg.github.io/swiply${payload.href}`
+    : text;
+
+  const res = await fetch("https://api.line.me/v2/bot/message/push", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.LINE_MSG_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify({
+      to: messagingUserId,
+      messages: [{ type: "text", text: fullText }],
+    }),
+  });
+
+  if (!res.ok) {
+    const detail = await res.text();
+    return new Response(`LINE API error: ${detail}`, { status: 502, headers: cors });
+  }
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+async function handleLinkToken(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  let payload: LinkTokenPayload;
+  try {
+    payload = await req.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400, headers: cors });
+  }
+  if (!payload.loginUserId) {
+    return new Response("loginUserId は必須", { status: 400, headers: cors });
+  }
+
+  // Messaging API: linkToken 発行
+  // https://developers.line.biz/ja/reference/messaging-api/#issue-link-token
+  const res = await fetch(
+    `https://api.line.me/v2/bot/user/${payload.loginUserId}/linkToken`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.LINE_MSG_ACCESS_TOKEN}` },
+    }
+  );
+  if (!res.ok) {
+    const detail = await res.text();
+    return new Response(`linkToken error: ${detail}`, { status: 502, headers: cors });
+  }
+  const { linkToken } = (await res.json()) as { linkToken: string };
+  return new Response(JSON.stringify({ linkToken }), {
+    status: 200,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+async function handleWebhook(req: Request, env: Env): Promise<Response> {
+  // 署名検証
+  const signature = req.headers.get("x-line-signature") || "";
+  const bodyText = await req.text();
+  const valid = await verifyLineSignature(
+    env.LINE_MSG_CHANNEL_SECRET,
+    bodyText,
+    signature
+  );
+  if (!valid) return new Response("Invalid signature", { status: 401 });
+
+  const body = JSON.parse(bodyText) as { events: LineEvent[] };
+  for (const event of body.events) {
+    if (event.type === "accountLink" && event.link.result === "ok") {
+      // accountLink イベント:
+      //   event.source.userId = Messaging API チャネルでの userId
+      //   event.link.nonce    = linkToken 発行時に紐付けた nonce
+      // ただし LINE の linkToken フローでは、linkToken は loginUserId に直接紐付くので、
+      // ここでは loginUserId を nonce 経由で引く設計が必要(下記 KV 設計参照)
+      const nonce = event.link.nonce;
+      const loginUserId = await env.LINK_MAP.get(`nonce:${nonce}`);
+      if (loginUserId) {
+        await env.LINK_MAP.put(loginUserId, event.source.userId);
+        await env.LINK_MAP.delete(`nonce:${nonce}`);  // 使用済み nonce を消す
+      }
+    }
+  }
+  return new Response("OK", { status: 200 });
+}
+
+interface LineEvent {
+  type: string;
+  source: { type: string; userId: string };
+  link: { result: string; nonce: string };
+}
+
+async function verifyLineSignature(
+  secret: string,
+  body: string,
+  signature: string
+): Promise<boolean> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sigBuf = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(body)
+  );
+  const expected = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+  return expected === signature;
+}
 ```
 
-#### デプロイ
+**KV 設計のポイント**:
+- `LINK_MAP[loginUserId] = messagingUserId` … push 送信時のメインルックアップ
+- `LINK_MAP[nonce:<nonce>] = loginUserId` … linkToken 発行〜accountLink webhook の間の一時的な対応(TTL を 10分〜1時間で設定推奨、`{ expirationTtl: 600 }` 等)
+
+ただし上記コードでは `nonce` の保存タイミングが書いていません。**`/linkToken` ハンドラで linkToken と一緒に返ってくる nonce を取って、`LINK_MAP[nonce:xxx] = loginUserId` を保存する必要がある**。LINE Messaging API の `/v2/bot/user/{userId}/linkToken` のレスポンスには linkToken 自体しか含まれず、nonce はクライアント側で生成して LINE に渡す方式の場合と、LINE が linkToken に組み込む場合がある。実装時に Messaging API のドキュメントを再確認のこと:
+- https://developers.line.biz/ja/reference/messaging-api/#issue-link-token
+- https://developers.line.biz/ja/docs/messaging-api/linking-accounts/
+
+#### 1-5. デプロイ + Secret 登録
 
 ```bash
-# トークンを Secret として登録(公開リポジトリには残らない)
-wrangler secret put LINE_CHANNEL_ACCESS_TOKEN
-# プロンプトが出たら ① で取得したトークンを貼り付け
+# Channel Access Token(長期) — 1Password から取り出して貼り付け
+wrangler secret put LINE_MSG_ACCESS_TOKEN
 
+# Channel Secret(webhook 署名検証用) — LINE OA Manager → 設定 → Messaging API から取得
+wrangler secret put LINE_MSG_CHANNEL_SECRET
+
+# デプロイ
 wrangler deploy
-# → デプロイ後 https://swiply-line-notify.<your-subdomain>.workers.dev のような URL が表示される
+# → https://swiply-line-notify.<your-subdomain>.workers.dev
 ```
 
-### ③ SWIPLY フロントの実装(★ matches.ts と notifyExternalChannel を作る)
+### ② Webhook URL を LINE OA Manager に登録
 
-**重要**: 現状のコードベースには `src/lib/services/matches.ts` も `notifyExternalChannel()` も **存在しない**。Claude Code は以下を新規作成する必要がある:
+1. https://manager.line.biz/account/@909suozs/setting/messaging-api を開く
+2. 「Webhook URL」欄に以下を入れて保存:
+   ```
+   https://swiply-line-notify.<your-subdomain>.workers.dev/webhook
+   ```
+3. **「Webhookの利用」を ON**(同ページの設定にある場合)
+4. 検証ボタンで疎通確認
+
+### ③ SWIPLY フロントの実装
 
 #### 3-1. `src/lib/services/matches.ts` を新規作成
 
-要件:
-- マッチ成立時に呼ばれるエントリーポイント関数
-- LINE userId が紐付いているユーザーには `notifyExternalChannel()` で push 通知
-- LINE 通知 URL が未設定なら何もしない(開発中も安全)
-- 既存の LINE Login userId(`uid: "line-Uxxxxxx..."`)から prefix を外して LINE userId を抽出する想定
-
-サンプル雛形:
-
 ```typescript
-// src/lib/services/matches.ts
 const NOTIFY_URL = process.env.NEXT_PUBLIC_LINE_NOTIFY_URL || "";
 
-interface NotifyArgs {
-  /** Recipient's LINE userId (raw, without "line-" prefix). */
-  lineUserId: string;
-  title: string;
-  body: string;
-  /** Optional path within SWIPLY to deep-link to (e.g. "/likes"). */
-  href?: string;
-}
-
-/**
- * Best-effort LINE push notification. Returns silently if the notify
- * endpoint isn't configured (dev / preview environments). Fire-and-
- * forget — we don't await the response in the caller.
- */
-export async function notifyExternalChannel(args: NotifyArgs): Promise<void> {
-  if (!NOTIFY_URL) return;
-  try {
-    await fetch(NOTIFY_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(args),
-    });
-  } catch (e) {
-    // Push failure shouldn't block the in-app match flow.
-    console.warn("[matches] LINE push failed", e);
-  }
-}
-
-/**
- * Extract a raw LINE userId from a SWIPLY uid. The OAuth/LIFF flows
- * store sessions with `uid: "line-{userId}"`; for non-LINE users this
- * returns null and notifyExternalChannel becomes a no-op.
- */
 export function lineUserIdFromUid(uid: string): string | null {
   return uid.startsWith("line-") ? uid.slice("line-".length) : null;
 }
+
+interface NotifyArgs {
+  recipientUid: string;     // SWIPLY uid (例: "line-Uxxx...")
+  title?: string;
+  body: string;
+  href?: string;            // 例: "/likes"
+}
+
+export async function notifyExternalChannel(args: NotifyArgs): Promise<void> {
+  if (!NOTIFY_URL) return;
+  const recipientLoginUserId = lineUserIdFromUid(args.recipientUid);
+  if (!recipientLoginUserId) return;  // 非LINEユーザーは通知対象外
+
+  try {
+    await fetch(`${NOTIFY_URL}/notify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        recipientLoginUserId,
+        title: args.title,
+        body: args.body,
+        href: args.href,
+      }),
+    });
+  } catch (e) {
+    console.warn("[matches] LINE push failed", e);
+  }
+}
 ```
 
-#### 3-2. マッチ成立箇所からの呼び出し
+#### 3-2. アカウント連携 UI(LIFF 経由)
 
-スワイプ成立箇所(`src/app/likes/page.tsx` や `src/lib/services/likes.ts` 周辺)で `notifyExternalChannel` を呼ぶ。
-- 自分が LIKE した相手にも、相手が自分を LIKE して成立した側にも、それぞれ送る
-- `lineUserId` は相手側の uid から抽出
-- 例: `notifyExternalChannel({ lineUserId, title: "マッチ成立!", body: "新しいマッチがいます", href: "/likes" })`
+ユーザーが LIFF で初めてログインした直後、または「LINE通知を有効にする」ボタンを押した時に:
+
+```typescript
+// src/lib/services/lineLink.ts (新規)
+const NOTIFY_URL = process.env.NEXT_PUBLIC_LINE_NOTIFY_URL || "";
+
+export async function startLineLink(loginUserId: string): Promise<void> {
+  if (!NOTIFY_URL) {
+    throw new Error("LINE通知サーバーが設定されていません");
+  }
+  const res = await fetch(`${NOTIFY_URL}/linkToken`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ loginUserId }),
+  });
+  if (!res.ok) throw new Error(`linkToken 取得失敗: ${res.status}`);
+  const { linkToken } = (await res.json()) as { linkToken: string };
+  // LINE のアカウント連携 URL に飛ばす
+  window.location.href = `https://access.line.me/dialog/bot/accountLink?linkToken=${linkToken}&nonce=${linkToken}`;
+}
+```
+
+呼び出し側(例: `/profile` ページに「LINE通知をONにする」ボタンを置く):
+
+```tsx
+import { lineUserIdFromUid } from "@/lib/services/matches";
+import { startLineLink } from "@/lib/services/lineLink";
+
+const loginUserId = session ? lineUserIdFromUid(session.uid) : null;
+{loginUserId && (
+  <button onClick={() => startLineLink(loginUserId)}>
+    LINEで通知を受け取る
+  </button>
+)}
+```
+
+#### 3-3. マッチ成立箇所からの呼び出し
+
+`src/lib/services/likes.ts` 周辺(LIKE が成立してマッチになる箇所)で:
+
+```typescript
+import { notifyExternalChannel } from "@/lib/services/matches";
+
+// マッチが成立した後
+notifyExternalChannel({
+  recipientUid: matchedUserUid,
+  title: "マッチ成立!",
+  body: "新しいマッチがいます",
+  href: "/likes",
+});
+```
 
 具体的な呼び出し場所と判定ロジックは既存実装を読んで判断してください。
 
-#### 3-3. 環境変数の設定
+#### 3-4. 環境変数
 
 GitHub の **Settings → Secrets and variables → Actions → Variables** に追加:
 
@@ -258,13 +443,13 @@ GitHub の **Settings → Secrets and variables → Actions → Variables** に�
 NEXT_PUBLIC_LINE_NOTIFY_URL = https://swiply-line-notify.<your-subdomain>.workers.dev
 ```
 
-ローカル開発用には `.env.local` に追記:
+`.env.local`(ローカル開発用)に追記:
 
 ```
 NEXT_PUBLIC_LINE_NOTIFY_URL=https://swiply-line-notify.<your-subdomain>.workers.dev
 ```
 
-#### 3-4. `.github/workflows/deploy.yml` の build ステップに env を渡す
+#### 3-5. `.github/workflows/deploy.yml` の build ステップに env を渡す
 
 ```yaml
       - name: Build
@@ -277,33 +462,35 @@ NEXT_PUBLIC_LINE_NOTIFY_URL=https://swiply-line-notify.<your-subdomain>.workers.
 ### ④ 動作確認
 
 1. SWIPLY をスマホで開く → リッチメニューからログイン → ホーム
-2. スワイプで LIKE → マッチ成立で 1〜3秒後にユーザーの LINE トーク画面に通知が届く
-3. 届かない場合は ⑤ のトラブルシュートを参照
-
-⚠ **公式アカウントを「友だち追加していないユーザー」には push できない**(LINE 仕様)。SWIPLY のリッチメニューから入るユーザーは LIFF のボットリンク Aggressive により自動で友だち追加される。
+2. プロフィール画面等の「LINEで通知を受け取る」ボタンをタップ
+3. LINE 公式アカウント連携の画面に遷移 → 「許可」をタップ
+4. SWIPLY に戻る → 連携完了
+5. スワイプで LIKE → マッチ成立 → 1〜3秒後に LINE トークに通知
 
 ### ⑤ トラブルシュート
 
 | 症状 | 原因 | 対処 |
 |---|---|---|
-| `LINE API error: 400` | `userId` の形式不正 | `U` で始まる32文字か確認 |
-| `LINE API error: 401` | Access Token 無効 | `wrangler secret put` でトークンを再登録 |
-| `LINE API error: 403` | 友だち追加されていない | 公式LINEを友だち追加してから再試行 |
+| `notify` レスポンスが `{ ok: false, reason: "not_linked" }` | アカウント連携未完了 | `/linkToken` フローを通す |
+| Webhook が呼ばれない | LINE OA Manager 側で Webhook URL 未設定 / 利用OFF | OA Manager → 設定 → Messaging API で確認 |
+| Webhook が 401 | 署名検証失敗。Channel Secret が違う | `wrangler secret put LINE_MSG_CHANNEL_SECRET` で再登録 |
+| `LINE API error: 401` | Channel Access Token 失効/無効 | `wrangler secret put LINE_MSG_ACCESS_TOKEN` で再登録 |
+| `LINE API error: 403` | 公式LINEを友だち追加していない | LINE で SWIPLY を友だち追加 |
 | CORS エラー | `ALLOW_ORIGIN` 不一致 | Workers の `wrangler.toml` の `ALLOW_ORIGIN` をフロントの origin と完全一致させる |
-| そもそも fetch が呼ばれない | `NEXT_PUBLIC_LINE_NOTIFY_URL` が未設定 | GitHub Actions の Variables / `.env.local` に設定 + 再デプロイ |
 
 ## コスト目安
 
 | 項目 | 無料枠 | 想定月間 push 数 | コスト |
 |---|---|---|---|
 | Cloudflare Workers | 100,000 req/日 | 数千 | 0円 |
+| Cloudflare KV | 1,000 writes/日, 10万 reads/日 | 連携イベント数十〜百 | 0円 |
 | LINE Messaging API(フリープラン) | 200通/月 | 〜200 | 0円 |
 | LINE Messaging API(ライトプラン) | 5,000通/月 | 〜5,000 | 5,000円/月 |
 
-ユーザー100人 × マッチ平均5回/月 = 500通 程度が想定。フリープラン(200通/月)の超過分はライトプランで吸収するのが現実的。
-
 ## 補足
 
-- **本ハンドオフは LIFF 自動ログイン(`LIFF_HANDOFF.md`)が完了している前提**。先にそちらが本番デプロイされて動作している必要がある。
-- **選択肢B で進める場合の追加実装**: 友だち追加 webhook を受ける別エンドポイント(または同じ Workers の別ルート)が必要。webhook で受けた userId を KV / DB に保存し、SWIPLY のユーザーと紐付けるロジックを別途設計する。本ハンドオフではそこまでの設計は含まれていないので、Claude Code は webhook の受け側まで作るかどうかをユーザーに確認すること。
-- **将来的には Firebase Functions に統合する選択肢もある**(プロジェクトが既に Firebase クライアントSDKを使っているため)。その場合 Cloudflare Workers ではなく Firebase Functions で同じことを実装。
+- **LIFF_HANDOFF.md が完了している前提**(本番デプロイ済み・実機ログイン確認済みであること)
+- 既存の **LINE Login チャネル `2009964059` は維持**。コード側の `DEFAULT_CHANNEL_ID` / `DEFAULT_LIFF_ID` は変更不要
+- アカウント連携は **ユーザー操作が必要**(ボタンをタップして LINE で許可)。リッチメニューから入っただけでは紐付かない
+- 連携は1ユーザーにつき1回。完了後は KV にマッピングが残るので push 通知が継続的に動く
+- 将来 Firebase Functions に移行する場合: `auth.users.{uid}.lineLink: { messagingUserId }` を Firestore に保存する設計に変えれば、Cloudflare KV と Workers の代替にできる

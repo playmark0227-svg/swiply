@@ -1,0 +1,20 @@
+name = "swiply-line-notify"
+main = "src/index.ts"
+compatibility_date = "2026-05-01"
+
+# Plain (non-secret) config — committed to the repo.
+[vars]
+ALLOW_ORIGIN = "https://playmark0227-svg.github.io"
+LINE_LOGIN_CHANNEL_ID = "2009964059"   # SWIPLY LINE Login channel
+LINE_MSG_CHANNEL_ID   = "2009985261"   # SWIPLY OA Messaging API channel
+LINE_OA_BASIC_ID      = "@909suozs"    # SWIPLY OA basic ID — used in oaMessage URL
+
+# KV namespace binding — fill in the `id` after running:
+#   wrangler kv namespace create LINK_MAP
+[[kv_namespaces]]
+binding = "LINK_MAP"
+id = "e9b1770ef8c34b8f8f08fe59580b271c"
+
+# Secrets (NOT in this file — set with wrangler):
+#   wrangler secret put LINE_MSG_ACCESS_TOKEN
+#   wrangler secret put LINE_MSG_CHANNEL_SECRET
