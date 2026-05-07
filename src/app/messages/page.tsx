@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/components/AuthProvider";
+import InterviewBookingModal from "@/components/InterviewBookingModal";
 import {
   type Match,
   type Message,
@@ -18,6 +19,12 @@ import {
   sendUserMessage,
   subscribeMatches,
 } from "@/lib/services/matches";
+import {
+  type InterviewAppointment,
+  getInterviewByMatchId,
+  subscribeInterviews,
+  timeUntil,
+} from "@/lib/services/interviews";
 import { haptic } from "@/lib/haptic";
 
 function relativeTime(iso: string): string {
@@ -62,7 +69,6 @@ export default function MessagesPage() {
     // pull both the latest messages and the updated unread counts).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMessages(getMessagesFor(selectedId));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMatches(getMatches());
   }, [selectedId]);
 
@@ -204,6 +210,8 @@ function ThreadView({
 }) {
   const [draft, setDraft] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [interview, setInterview] = useState<InterviewAppointment | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   // Auto-scroll to the bottom when new messages arrive
@@ -212,6 +220,22 @@ function ThreadView({
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [messages.length]);
+
+  // Track the most-recent interview attached to this match. Re-runs on
+  // any interview state change (booking, completion, cancel, etc.).
+  useEffect(() => {
+    const refresh = () =>
+      setInterview(getInterviewByMatchId(match.id) ?? null);
+    refresh();
+    return subscribeInterviews(refresh);
+  }, [match.id]);
+
+  // Tick once a minute so the relative-time label stays fresh.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   function send() {
     if (!draft.trim()) return;
@@ -250,6 +274,19 @@ function ThreadView({
             <p className="text-[11px] text-gray-500 truncate">{match.jobTitle}</p>
           </div>
         </Link>
+        <button
+          onClick={() => {
+            haptic("tick");
+            setBookingOpen(true);
+          }}
+          aria-label="ビデオ面接を予約"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-100 text-[11px] font-extrabold transition"
+        >
+          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17 10.5V7a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-3.5l4 4v-11l-4 4z" />
+          </svg>
+          ビデオ面接
+        </button>
         <div className="relative">
           <button
             onClick={() => setMenuOpen((o) => !o)}
@@ -268,7 +305,16 @@ function ThreadView({
                 className="fixed inset-0 z-10"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden min-w-[160px]">
+              <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-xl border border-gray-100 shadow-lg overflow-hidden min-w-[180px]">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setBookingOpen(true);
+                  }}
+                  className="md:hidden block w-full text-left px-4 py-2.5 text-[12px] text-violet-700 font-bold hover:bg-violet-50"
+                >
+                  📹 ビデオ面接を予約
+                </button>
                 <Link
                   href={`/job/${match.jobId}/`}
                   className="block px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50"
@@ -298,6 +344,11 @@ function ThreadView({
           )}
         </div>
       </div>
+
+      {/* Interview banner */}
+      {interview && interview.status !== "cancelled" && (
+        <InterviewBanner interview={interview} />
+      )}
 
       {/* Messages */}
       <div
@@ -390,6 +441,96 @@ function ThreadView({
           </svg>
         </button>
       </div>
+
+      {/* Booking modal — parent-controlled mount so initial state resets. */}
+      {bookingOpen && (
+        <InterviewBookingModal
+          onClose={() => setBookingOpen(false)}
+          match={{
+            id: match.id,
+            jobId: match.jobId,
+            jobTitle: match.jobTitle,
+            jobCompany: match.jobCompany,
+            jobImage: match.jobImage,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Banner that surfaces the most-recent interview for the active thread.
+ * Shows status, relative time-until, and primary CTA (join / view report).
+ */
+function InterviewBanner({ interview }: { interview: InterviewAppointment }) {
+  const status = interview.status;
+  const tu = timeUntil(interview.scheduledAt);
+  const completed = status === "completed";
+  const hasReport =
+    !!interview.analysisForUser || !!interview.analysisForCompany;
+  const inProgress = status === "in_progress";
+
+  // The "join" action is enabled within ±10min of the scheduled time, or
+  // any time after if status hasn't moved to completed/cancelled.
+  const canJoin =
+    !completed &&
+    status !== "cancelled" &&
+    (tu.state === "now" ||
+      tu.state === "past" ||
+      Math.abs(tu.diffMs) < 10 * 60_000);
+
+  const cta = completed
+    ? hasReport
+      ? {
+          href: `/interview/analysis/?id=${interview.id}&mode=user`,
+          label: "AI 振り返りを見る",
+        }
+      : null
+    : canJoin
+      ? {
+          href: `/interview/?id=${interview.id}&mode=user`,
+          label: inProgress ? "面接に戻る" : "面接に参加",
+        }
+      : null;
+
+  const accent = completed
+    ? "from-emerald-50 to-teal-50 border-emerald-100 text-emerald-800"
+    : tu.state === "now"
+      ? "from-rose-50 to-fuchsia-50 border-rose-100 text-rose-800"
+      : "from-violet-50 to-fuchsia-50 border-violet-100 text-violet-800";
+
+  const label = completed
+    ? "📹 面接終了"
+    : tu.state === "now"
+      ? "🔴 面接中"
+      : `📹 ${tu.label}に面接`;
+
+  return (
+    <div
+      className={`mx-3 md:mx-5 mt-3 rounded-2xl border bg-gradient-to-r ${accent} px-4 py-3 flex items-center gap-3`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-[12px] font-extrabold mb-0.5">{label}</p>
+        <p className="text-[10px] opacity-80 truncate">
+          {new Date(interview.scheduledAt).toLocaleString("ja-JP", {
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}{" "}
+          ・ {interview.durationMinutes}分
+          {interview.title ? ` ・ ${interview.title}` : ""}
+        </p>
+      </div>
+      {cta && (
+        <Link
+          href={cta.href}
+          className="shrink-0 px-3.5 py-1.5 rounded-xl bg-white border border-current/30 text-[11px] font-extrabold hover:bg-current/5 active:scale-95 transition"
+        >
+          {cta.label}
+        </Link>
+      )}
     </div>
   );
 }

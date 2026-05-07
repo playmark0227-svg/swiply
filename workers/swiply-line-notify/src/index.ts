@@ -34,6 +34,17 @@ export interface Env {
   // Secrets (set with `wrangler secret put`)
   LINE_MSG_ACCESS_TOKEN: string;
   LINE_MSG_CHANNEL_SECRET: string;
+  /**
+   * Optional — when set, /interview/transcribe proxies audio to OpenAI
+   * Whisper. When unset, the endpoint returns a mock transcript so the
+   * rest of the pipeline still works for demos.
+   */
+  OPENAI_API_KEY?: string;
+  /**
+   * Optional — when set, /interview/analyze proxies the transcript to
+   * Anthropic Claude. When unset, returns a mock InterviewAnalysis.
+   */
+  ANTHROPIC_API_KEY?: string;
   // Vars (set in wrangler.toml [vars])
   LINE_LOGIN_CHANNEL_ID: string;
   LINE_MSG_CHANNEL_ID: string;
@@ -68,6 +79,9 @@ function corsHeaders(origin: string): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
+    // multipart/form-data for /interview/transcribe — explicit
+    // Content-Type still works, but Access-Control-Allow-Headers needs
+    // to accept it.
     "Access-Control-Allow-Headers": "Content-Type",
     "Access-Control-Max-Age": "86400",
   };
@@ -103,6 +117,12 @@ export default {
       }
       if (url.pathname === "/notify" && req.method === "POST") {
         return await handleNotify(req, env, cors);
+      }
+      if (url.pathname === "/interview/transcribe" && req.method === "POST") {
+        return await handleInterviewTranscribe(req, env, cors);
+      }
+      if (url.pathname === "/interview/analyze" && req.method === "POST") {
+        return await handleInterviewAnalyze(req, env, cors);
       }
       if (url.pathname === "/webhook" && req.method === "POST") {
         return await handleWebhook(req, env);
@@ -430,4 +450,304 @@ async function verifyLineSignature(
   );
   const expected = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
   return expected === signature;
+}
+
+// ===== /interview/transcribe =====
+// Accepts multipart/form-data with field "audio" (the recorded blob).
+// Proxies to OpenAI Whisper. If OPENAI_API_KEY is unset, returns a
+// deterministic mock transcript so the client UI stays functional.
+async function handleInterviewTranscribe(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return jsonResponse({ ok: false, error: "invalid_form" }, 400, cors);
+  }
+  // Cloudflare Workers' type definition for FormData#get is currently
+  // `string | null` even for file uploads (the runtime returns a File
+  // when the field is a file). Cast through `unknown` to match reality.
+  const audioRaw = form.get("audio") as unknown;
+  if (
+    !audioRaw ||
+    typeof audioRaw === "string" ||
+    !(audioRaw instanceof File)
+  ) {
+    return jsonResponse(
+      { ok: false, error: "audio field required" },
+      400,
+      cors
+    );
+  }
+  const audio: File = audioRaw;
+
+  if (!env.OPENAI_API_KEY) {
+    return jsonResponse(
+      {
+        ok: true,
+        mock: true,
+        transcript: buildMockTranscript(),
+      },
+      200,
+      cors
+    );
+  }
+
+  // Forward to OpenAI Whisper.
+  // https://platform.openai.com/docs/api-reference/audio/createTranscription
+  const upstream = new FormData();
+  upstream.append("file", audio, audio.name || "interview.webm");
+  upstream.append("model", "whisper-1");
+  upstream.append("language", "ja");
+  upstream.append("response_format", "json");
+
+  const res = await fetch(
+    "https://api.openai.com/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}` },
+      body: upstream,
+    }
+  );
+  if (!res.ok) {
+    const detail = await res.text();
+    return jsonResponse(
+      { ok: false, error: `whisper: ${detail.slice(0, 500)}` },
+      502,
+      cors
+    );
+  }
+  const json = (await res.json()) as { text?: string };
+  return jsonResponse({ ok: true, transcript: json.text ?? "" }, 200, cors);
+}
+
+function buildMockTranscript(): string {
+  return [
+    "面接担当：本日はお時間をいただきありがとうございます。まずは自己紹介をお願いします。",
+    "候補者：はい、よろしくお願いします。これまでフロントエンドエンジニアとして3年ほど働いておりまして、ReactとTypeScriptを中心に開発してきました。",
+    "面接担当：素晴らしいですね。これまでの一番の成果について教えてください。",
+    "候補者：ECサイトのリニューアルプロジェクトでチームリーダーを務め、ページ表示速度を40%改善しました。Lighthouse スコアも大きく上がりました。",
+    "面接担当：チームをまとめる上で意識したことは何ですか？",
+    "候補者：誰でも質問しやすい雰囲気作りと、決定の背景をドキュメント化することを徹底しました。",
+    "面接担当：弊社で挑戦したいことはありますか？",
+    "候補者：UXに踏み込んだ意思決定がしやすい組織だと聞いておりまして、ユーザー価値に直結する開発に携わりたいです。",
+    "面接担当：ありがとうございます。最後に何か質問はありますか？",
+    "候補者：チームの開発フローと意思決定について、もう少し詳しく伺ってもよろしいでしょうか。",
+  ].join("\n");
+}
+
+// ===== /interview/analyze =====
+// Accepts JSON: { transcript, mode: "user"|"company", jobTitle, jobCompany }
+// Returns { ok, analysis: InterviewAnalysis, mock? }.
+interface AnalyzePayload {
+  transcript: string;
+  mode: "user" | "company";
+  jobTitle?: string;
+  jobCompany?: string;
+}
+
+interface ClaudeAnalysis {
+  summary: string;
+  strengths: string[];
+  improvements: string[];
+  recommendation: string;
+  warnings?: string[];
+}
+
+async function handleInterviewAnalyze(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  let payload: AnalyzePayload;
+  try {
+    payload = (await req.json()) as AnalyzePayload;
+  } catch {
+    return jsonResponse({ ok: false, error: "invalid_json" }, 400, cors);
+  }
+  if (!payload.transcript || typeof payload.transcript !== "string") {
+    return jsonResponse(
+      { ok: false, error: "transcript required" },
+      400,
+      cors
+    );
+  }
+  const mode = payload.mode === "company" ? "company" : "user";
+  const generatedAt = new Date().toISOString();
+
+  if (!env.ANTHROPIC_API_KEY) {
+    return jsonResponse(
+      {
+        ok: true,
+        mock: true,
+        analysis: buildMockAnalysis(mode, generatedAt),
+      },
+      200,
+      cors
+    );
+  }
+
+  const prompt = buildAnalysisPrompt(payload, mode);
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1500,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    return jsonResponse(
+      { ok: false, error: `claude: ${detail.slice(0, 500)}` },
+      502,
+      cors
+    );
+  }
+  type ClaudeResponse = {
+    content?: Array<{ type: string; text?: string }>;
+  };
+  const json = (await res.json()) as ClaudeResponse;
+  const text =
+    json.content
+      ?.filter((b) => b.type === "text")
+      .map((b) => b.text ?? "")
+      .join("\n") ?? "";
+  const parsed = parseAnalysisJson(text);
+  if (!parsed) {
+    return jsonResponse(
+      { ok: false, error: "claude returned non-JSON output" },
+      502,
+      cors
+    );
+  }
+  return jsonResponse(
+    { ok: true, analysis: { ...parsed, generatedAt } },
+    200,
+    cors
+  );
+}
+
+function buildAnalysisPrompt(
+  p: AnalyzePayload,
+  mode: "user" | "company"
+): string {
+  const persona =
+    mode === "user"
+      ? "あなたはキャリアコーチです。求職者本人に向けて、次の面接や転職活動に活かせる具体的なフィードバックを書いてください。"
+      : "あなたは採用コンサルタントです。採用担当者に向けて、この候補者の評価レポートを書いてください。";
+
+  return [
+    persona,
+    "",
+    `求人: ${p.jobCompany ?? ""} ${p.jobTitle ?? ""}`,
+    "",
+    "次のビデオ面接の文字起こしを読み、JSON形式で評価してください。返答は ```json ... ``` のような囲みやコメント無しで、純粋な JSON オブジェクトのみを返してください。スキーマ:",
+    "{",
+    '  "summary": "1〜2文の総評",',
+    '  "strengths": ["強み1", "強み2", ...],   // 3〜5個',
+    '  "improvements": ["改善ポイント1", ...], // 2〜4個',
+    '  "recommendation": "1文のおすすめ次アクション",',
+    '  "warnings": ["懸念事項"]               // 任意、なければ省略',
+    "}",
+    "",
+    "文字起こし:",
+    "----",
+    p.transcript,
+    "----",
+    "",
+    "JSON のみを返してください。",
+  ].join("\n");
+}
+
+function parseAnalysisJson(text: string): ClaudeAnalysis | null {
+  // Try direct parse first
+  const trimmed = text.trim();
+  const direct = tryParseJson(trimmed);
+  if (direct) return direct;
+  // Try to extract a JSON object from markdown fences or surrounding text
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+  if (fence) {
+    const fenced = tryParseJson(fence[1]);
+    if (fenced) return fenced;
+  }
+  const obj = trimmed.match(/\{[\s\S]+\}/);
+  if (obj) {
+    return tryParseJson(obj[0]);
+  }
+  return null;
+}
+
+function tryParseJson(s: string): ClaudeAnalysis | null {
+  try {
+    const parsed = JSON.parse(s) as Partial<ClaudeAnalysis>;
+    if (
+      typeof parsed.summary === "string" &&
+      Array.isArray(parsed.strengths) &&
+      Array.isArray(parsed.improvements) &&
+      typeof parsed.recommendation === "string"
+    ) {
+      return {
+        summary: parsed.summary,
+        strengths: parsed.strengths.map(String),
+        improvements: parsed.improvements.map(String),
+        recommendation: parsed.recommendation,
+        warnings: Array.isArray(parsed.warnings)
+          ? parsed.warnings.map(String)
+          : undefined,
+      };
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function buildMockAnalysis(
+  mode: "user" | "company",
+  generatedAt: string
+): ClaudeAnalysis & { generatedAt: string } {
+  if (mode === "user") {
+    return {
+      summary:
+        "落ち着いた受け答えで実績を具体的に語れていました。次回はより会社固有の課題に踏み込んだ質問を準備するとさらに評価が上がります。",
+      strengths: [
+        "数値（40%改善）で成果を語れている",
+        "チームリードの経験を具体的なエピソードで示せている",
+        "言葉遣いが丁寧で聞き取りやすい",
+      ],
+      improvements: [
+        "応募先の事業ドメインに踏み込んだ質問が少なかった",
+        "技術選定の意思決定プロセスをもう少し具体的に語れると強い",
+      ],
+      recommendation:
+        "次回までに「なぜこの会社なのか」を3つの観点で言語化して臨むと差別化できます。",
+      generatedAt,
+    };
+  }
+  return {
+    summary:
+      "コミュニケーション能力と実績の言語化能力が高く、リーダー候補として有望です。技術力の深さは追加面接で確認推奨。",
+    strengths: [
+      "数値で成果を語れる説明能力",
+      "リーダーシップ経験あり（チーム管理 + ドキュメント文化醸成）",
+      "改善志向（Lighthouse スコア向上の実例）",
+    ],
+    improvements: [
+      "技術選定の判断軸が抽象的だったため、コーディング面接で深掘り推奨",
+      "弊社事業への理解度が表面的なので、二次面接ではビジネス観点も確認",
+    ],
+    recommendation:
+      "次フェーズ（コーディング面接 + マネージャー面談）に進めることを推奨します。",
+    warnings: ["技術スタックの整合性は次回面接で要確認"],
+    generatedAt,
+  };
 }
