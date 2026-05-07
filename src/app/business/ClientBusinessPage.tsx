@@ -338,6 +338,17 @@ function SolutionSection() {
     },
     {
       n: "03",
+      title: "ビデオ面接 + AI 振り返りで、工数削減",
+      body: "アプリ内ビデオ面接の終了後に、AI が自動で評価レポートを作成。候補者の強み・確認したい点・推奨ネクストステップを、採用担当向けに可視化。次面接の判断が早くなる。",
+      badge: "NEW",
+      icon: (
+        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.6}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        </svg>
+      ),
+    },
+    {
+      n: "04",
       title: "コンサルが、採用全体を伴走する",
       body: "SWIPLYだけでなく、店舗の採用全体を一緒に考えます。他媒体の使い分け、求人票の改善、面接の質問設計、内定後のフォローまで。採用が決まるまで伴走します。",
       icon: (
@@ -352,7 +363,7 @@ function SolutionSection() {
     <section id="solution" className="px-5 md:px-8 py-20 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto">
         <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
-          ─ SWIPLYが、変える3つのこと
+          ─ SWIPLYが、変える4つのこと
         </p>
         <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-12 md:mb-16">
           採用は、もう数字じゃない。
@@ -362,12 +373,17 @@ function SolutionSection() {
           </span>
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-5 md:gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
           {items.map((it) => (
             <div
               key={it.n}
               className="group relative bg-white border border-gray-100 rounded-3xl p-7 md:p-8 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100 hover:border-blue-100 transition-all"
             >
+              {"badge" in it && it.badge && (
+                <span className="absolute top-4 right-4 px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-[9px] font-black tracking-[0.2em]">
+                  {it.badge}
+                </span>
+              )}
               <p className="text-[11px] font-black tabular-nums text-gray-300 tracking-widest mb-4">
                 {it.n} /
               </p>

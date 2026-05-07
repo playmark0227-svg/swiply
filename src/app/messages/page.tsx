@@ -526,7 +526,7 @@ function InterviewBanner({ interview }: { interview: InterviewAppointment }) {
       {cta && (
         <Link
           href={cta.href}
-          className="shrink-0 px-3.5 py-1.5 rounded-xl bg-white border border-current/30 text-[11px] font-extrabold hover:bg-current/5 active:scale-95 transition"
+          className="shrink-0 px-3.5 py-1.5 rounded-xl bg-white/95 border border-current/30 text-[11px] font-extrabold hover:bg-white active:scale-95 transition"
         >
           {cta.label}
         </Link>

@@ -11,15 +11,31 @@ const geistSans = Geist({
 
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
+const SITE_DESCRIPTION =
+  "履歴書の前に、スワイプでいい。求人の発見からマッチ後のチャット、ビデオ面接 + AI 振り返りまで、就職活動のひと通りをアプリ１つで。";
+
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NODE_ENV === "production"
       ? "https://playmark0227-svg.github.io"
       : "http://localhost:3000"
   ),
-  title: "SWIPLY - 履歴書の前に、スワイプでいい。",
-  description:
-    "スワイプひとつで、会いたい企業まで最短距離。履歴書も長文応募も要らない、新しい求人の探し方。",
+  title: {
+    default: "SWIPLY — 履歴書の前に、スワイプでいい。",
+    template: "%s | SWIPLY",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: "SWIPLY",
+  keywords: [
+    "求人",
+    "転職",
+    "アルバイト",
+    "新卒",
+    "スワイプ",
+    "ビデオ面接",
+    "AI 面接",
+    "SWIPLY",
+  ],
   icons: {
     icon: [
       { url: `${BASE_PATH}/favicon-32.png`, sizes: "32x32", type: "image/png" },
@@ -29,9 +45,17 @@ export const metadata: Metadata = {
     apple: `${BASE_PATH}/apple-touch-icon.png`,
   },
   openGraph: {
-    title: "SWIPLY - 履歴書の前に、スワイプでいい。",
-    description:
-      "スワイプひとつで、会いたい企業まで最短距離。履歴書も長文応募も要らない、新しい求人の探し方。",
+    title: "SWIPLY — 履歴書の前に、スワイプでいい。",
+    description: SITE_DESCRIPTION,
+    type: "website",
+    locale: "ja_JP",
+    siteName: "SWIPLY",
+    images: [`${BASE_PATH}/icon-512.png`],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SWIPLY — 履歴書の前に、スワイプでいい。",
+    description: SITE_DESCRIPTION,
     images: [`${BASE_PATH}/icon-512.png`],
   },
 };

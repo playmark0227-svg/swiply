@@ -155,6 +155,19 @@ export default function Header() {
 
         {/* Right actions */}
         <div className="flex items-center gap-0.5">
+          {/* "For Business" pill — visible on desktop only.
+              Compact enough that it doesn't crowd the icon group, but
+              prominent enough that recruiters landing on the candidate
+              site can find their way over without hunting. */}
+          <Link
+            href="/business"
+            onClick={() => haptic("tick")}
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 mr-1.5 rounded-full bg-gradient-to-r from-cyan-50 to-fuchsia-50 border border-cyan-100 text-[11px] font-extrabold text-gray-700 hover:from-cyan-100 hover:to-fuchsia-100 active:scale-95 transition"
+          >
+            <span aria-hidden>🏢</span>
+            <span>企業の方へ</span>
+            <span className="text-cyan-500">→</span>
+          </Link>
           <Link
             href="/search"
             aria-label="検索"

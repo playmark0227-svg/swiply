@@ -240,6 +240,9 @@ export default function ProfilePage() {
             className="relative w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-200 overflow-hidden hover:border-violet-300 transition-colors group"
           >
             {profile.photo ? (
+              // Profile photo is a base64 data URL stored in localStorage,
+              // so next/image's optimization pipeline doesn't apply.
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.photo}
                 alt="Profile"
