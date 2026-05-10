@@ -124,6 +124,9 @@ export default {
       if (url.pathname === "/interview/analyze" && req.method === "POST") {
         return await handleInterviewAnalyze(req, env, cors);
       }
+      if (url.pathname === "/scout/generate" && req.method === "POST") {
+        return await handleScoutGenerate(req, env, cors);
+      }
       if (url.pathname === "/webhook" && req.method === "POST") {
         return await handleWebhook(req, env);
       }
@@ -750,4 +753,176 @@ function buildMockAnalysis(
     warnings: ["技術スタックの整合性は次回面接で要確認"],
     generatedAt,
   };
+}
+
+// ===== /scout/generate =====
+// Generates a personalized scout message for a single candidate, using
+// the company's role + the candidate's profile snippet. Replaces the
+// generic "定型文スカウト" pattern that drives mainstream sites' open
+// rates down to ~30%.
+//
+// Request:
+//   {
+//     candidate: { name, age?, selfIntro, skills?, hobbies?, experience? },
+//     job:       { title, company, catchphrase?, description? },
+//     senderName: "採用担当 田中花子",
+//     tone?: "casual" | "formal"  (default: formal)
+//   }
+//
+// Response:
+//   { ok, message: string, mock?: boolean }
+//
+// When ANTHROPIC_API_KEY is not set, returns a deterministic mock so
+// the UI keeps working in demos.
+interface ScoutPayload {
+  candidate: {
+    name: string;
+    age?: string;
+    selfIntro?: string;
+    skills?: string[];
+    hobbies?: string[];
+    experience?: string;
+  };
+  job: {
+    title: string;
+    company: string;
+    catchphrase?: string;
+    description?: string;
+  };
+  senderName: string;
+  tone?: "casual" | "formal";
+}
+
+async function handleScoutGenerate(
+  req: Request,
+  env: Env,
+  cors: Record<string, string>
+): Promise<Response> {
+  let payload: ScoutPayload;
+  try {
+    payload = (await req.json()) as ScoutPayload;
+  } catch {
+    return jsonResponse({ ok: false, error: "invalid_json" }, 400, cors);
+  }
+  if (!payload.candidate?.name || !payload.job?.title || !payload.senderName) {
+    return jsonResponse(
+      { ok: false, error: "candidate.name, job.title, senderName required" },
+      400,
+      cors
+    );
+  }
+
+  if (!env.ANTHROPIC_API_KEY) {
+    return jsonResponse(
+      {
+        ok: true,
+        mock: true,
+        message: buildMockScout(payload),
+      },
+      200,
+      cors
+    );
+  }
+
+  const prompt = buildScoutPrompt(payload);
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 600,
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    return jsonResponse(
+      { ok: false, error: `claude: ${detail.slice(0, 500)}` },
+      502,
+      cors
+    );
+  }
+  type ClaudeResponse = {
+    content?: Array<{ type: string; text?: string }>;
+  };
+  const json = (await res.json()) as ClaudeResponse;
+  const text =
+    json.content
+      ?.filter((b) => b.type === "text")
+      .map((b) => b.text ?? "")
+      .join("\n")
+      .trim() ?? "";
+  if (!text) {
+    return jsonResponse(
+      { ok: false, error: "claude returned empty text" },
+      502,
+      cors
+    );
+  }
+  return jsonResponse({ ok: true, message: text }, 200, cors);
+}
+
+function buildScoutPrompt(p: ScoutPayload): string {
+  const tone = p.tone === "casual" ? "ややカジュアル（敬体だけ守る）" : "丁寧";
+  return [
+    "あなたは中小企業の採用担当として、候補者個人に向けたスカウト文章を作成します。",
+    "",
+    "**強い制約:**",
+    "- 「定型文」感を絶対に出さない。冒頭は候補者の自己紹介の具体的な一節を引用する。",
+    "- 候補者の名前を冒頭で呼ぶ。",
+    "- 候補者の経験/スキル/趣味のうち、ポジションに関連する点を1〜2個明確に言及する。",
+    "- 業務内容を簡潔に伝える（30文字以内）。",
+    "- 最後にカジュアル面談の打診で締める。",
+    "- 全体を200〜350文字。改行で読みやすく。",
+    `- トーン: ${tone}`,
+    `- 末尾の署名は「${p.senderName}」。`,
+    "",
+    "**候補者プロフィール:**",
+    `名前: ${p.candidate.name}`,
+    p.candidate.age ? `年齢: ${p.candidate.age}` : "",
+    p.candidate.selfIntro ? `自己紹介: ${p.candidate.selfIntro}` : "",
+    p.candidate.skills?.length ? `スキル: ${p.candidate.skills.join(", ")}` : "",
+    p.candidate.hobbies?.length ? `趣味: ${p.candidate.hobbies.join(", ")}` : "",
+    p.candidate.experience ? `経験: ${p.candidate.experience}` : "",
+    "",
+    "**ポジション:**",
+    `会社: ${p.job.company}`,
+    `タイトル: ${p.job.title}`,
+    p.job.catchphrase ? `キャッチ: ${p.job.catchphrase}` : "",
+    p.job.description ? `業務概要: ${p.job.description.slice(0, 300)}` : "",
+    "",
+    "スカウト本文のみを返してください（メタコメント・前置き不要）。",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function buildMockScout(p: ScoutPayload): string {
+  const intro = p.candidate.selfIntro
+    ? `「${p.candidate.selfIntro.slice(0, 24)}…」というプロフィールを拝見し、`
+    : "プロフィールを拝見し、";
+  const hook =
+    p.candidate.skills?.[0] ||
+    p.candidate.hobbies?.[0] ||
+    "今回のポジション";
+  return [
+    `${p.candidate.name}さん、${p.job.company}の${p.senderName}です。`,
+    "",
+    `${intro}弊社の${p.job.title}と相性が良さそうだなと思いご連絡しました。`,
+    `特に「${hook}」のところ、今回のチームでも重要視している部分です。`,
+    "",
+    p.job.catchphrase
+      ? `${p.job.catchphrase}という想いで日々動いています。`
+      : "",
+    "もしご興味あれば、まずは20分くらいのカジュアル面談からいかがでしょうか？",
+    "ご質問だけでも全然OKですので、お気軽にどうぞ🌷",
+    "",
+    p.senderName,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

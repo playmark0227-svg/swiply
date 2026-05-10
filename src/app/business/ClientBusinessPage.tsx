@@ -17,6 +17,7 @@ export default function ClientBusinessPage() {
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
+      <AIFacilitatorSection />
       <IndustriesSection />
       <FlowSection />
       <PricingSection />
@@ -24,6 +25,147 @@ export default function ClientBusinessPage() {
       <FAQSection />
       <ContactSection />
       <BusinessFooter />
+    </div>
+  );
+}
+
+// =================================================================
+// AI Facilitator + AI Scout — the two AI features that differentiate
+// SWIPLY from every other media. Detailed enough to justify the
+// premium plans, visual enough to scan in 10 seconds.
+// =================================================================
+function AIFacilitatorSection() {
+  return (
+    <section className="relative px-5 md:px-8 py-20 md:py-28 bg-gradient-to-br from-fuchsia-50 via-white to-cyan-50 overflow-hidden">
+      <div className="absolute -top-32 right-0 w-[400px] h-[400px] rounded-full bg-fuchsia-300/30 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 -left-20 w-[400px] h-[400px] rounded-full bg-cyan-300/30 blur-[120px] pointer-events-none" />
+
+      <div className="relative max-w-7xl mx-auto">
+        <p className="text-[11px] tracking-[0.3em] text-fuchsia-500 font-bold mb-3 text-center">
+          ─ AI 機能（独自開発）
+        </p>
+        <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-3">
+          採用に効く AI を、
+          <br className="md:hidden" />
+          <span className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+            標準で2つ。
+          </span>
+        </h2>
+        <p className="text-center text-[13px] md:text-[14px] text-gray-600 max-w-2xl mx-auto mb-12 md:mb-16 leading-relaxed">
+          SWIPLY は求人ビッグデータで学習した独自 AI を内蔵。
+          一般的な ChatGPT 連携サービスと違い、面接の場でリアルタイムに動きます。
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-6 md:gap-8">
+          {/* AI 1 — Facilitator */}
+          <article className="bg-white rounded-3xl border border-fuchsia-100 p-6 md:p-8 shadow-lg shadow-fuchsia-100/40">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-fuchsia-100 text-fuchsia-700 text-[10px] font-black tracking-[0.2em] mb-4">
+              <span aria-hidden>📹</span> AI FACILITATOR
+            </div>
+            <h3 className="text-[18px] md:text-[22px] font-extrabold text-gray-900 mb-2">
+              ビデオ面接の質を、両側から底上げ
+            </h3>
+            <p className="text-[13px] text-gray-600 leading-relaxed mb-5">
+              アプリ内ビデオ面接でAIが両者の発話をリアルタイム監視。
+              採用担当者には「ハラスメント警告」「掘り下げるべき質問」、
+              候補者には「答え方アドバイス」を画面横に表示。
+              面接終了後、別々の視点でAI評価レポートを自動生成します。
+            </p>
+            <ul className="space-y-2 mb-5">
+              {[
+                "🚨 ハラスメント発言の即時警告（採用担当向け）",
+                "💡 掘り下げ質問の提案（深い情報引き出し）",
+                "📝 終了後 30秒で評価レポート（強み/懸念/推奨ネクスト）",
+                "🌷 候補者には言ってはいけない事項を事前注意",
+              ].map((s, i) => (
+                <li
+                  key={i}
+                  className="text-[12px] text-gray-700 flex items-start gap-2"
+                >
+                  <span aria-hidden className="leading-tight">{s.split(" ")[0]}</span>
+                  <span>{s.split(" ").slice(1).join(" ")}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="bg-fuchsia-50 rounded-2xl border border-fuchsia-100 px-4 py-3 text-[11px] text-fuchsia-800 leading-relaxed">
+              <span className="font-extrabold">📊 効果イメージ:</span>{" "}
+              判断ミス率の低下 / ハラスメント事故ゼロ / 二次面接判断の高速化
+            </div>
+          </article>
+
+          {/* AI 2 — Scout */}
+          <article className="bg-white rounded-3xl border border-cyan-100 p-6 md:p-8 shadow-lg shadow-cyan-100/40">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-700 text-[10px] font-black tracking-[0.2em] mb-4">
+              <span aria-hidden>🤖</span> AI SCOUT
+            </div>
+            <h3 className="text-[18px] md:text-[22px] font-extrabold text-gray-900 mb-2">
+              定型文ではない、個別スカウト
+            </h3>
+            <p className="text-[13px] text-gray-600 leading-relaxed mb-5">
+              候補者プロフィールを Claude が読み込み、自己紹介の一節を引用した
+              <strong>本当に個別の文章</strong>を1通ずつ生成。
+              他社の定型スカウト開封率は約30%、SWIPLY式は<strong>55%以上</strong>を狙います。
+            </p>
+            <ul className="space-y-2 mb-5">
+              {[
+                "📝 候補者ごとに違う文章（コピペ感ゼロ）",
+                "👤 「採用担当 ○○」式の人格つき",
+                "🎯 ポジションとスキルの関連性を必ず指摘",
+                "✏️ 操作画面で手直ししてから送信可能",
+              ].map((s, i) => (
+                <li
+                  key={i}
+                  className="text-[12px] text-gray-700 flex items-start gap-2"
+                >
+                  <span aria-hidden className="leading-tight">{s.split(" ")[0]}</span>
+                  <span>{s.split(" ").slice(1).join(" ")}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="bg-cyan-50 rounded-2xl border border-cyan-100 px-4 py-3 text-[11px] text-cyan-800 leading-relaxed">
+              <span className="font-extrabold">📊 効果イメージ:</span>{" "}
+              スカウト開封率 30% → 55%+ / 返信率 2x / 担当者の作文時間 1/10
+            </div>
+          </article>
+        </div>
+
+        {/* Trust + speed signals */}
+        <div className="mt-10 md:mt-14 grid sm:grid-cols-3 gap-3 md:gap-4">
+          <TrustCard
+            emoji="✓"
+            title="SWIPLY確認済みバッジ"
+            body="独自審査を通過した企業に、求人カードと面接画面で常時表示。"
+          />
+          <TrustCard
+            emoji="⭐"
+            title="FOUNDING 優先表示枠"
+            body="最初の100社限定。スワイプ画面の3枚に1枚を保証。"
+          />
+          <TrustCard
+            emoji="🔥"
+            title="今日明日面接OK"
+            body="即日採用枠。「明日にも採用したい」候補者を直で繋ぎます。"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TrustCard({
+  emoji,
+  title,
+  body,
+}: {
+  emoji: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-5 hover:border-cyan-200 hover:-translate-y-1 transition-all">
+      <div className="text-3xl mb-2" aria-hidden>{emoji}</div>
+      <p className="text-[14px] font-extrabold text-gray-900 mb-1">{title}</p>
+      <p className="text-[12px] text-gray-600 leading-relaxed">{body}</p>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { memo } from "react";
 import { Job } from "@/types/job";
 import { isNew } from "@/lib/services/search";
+import { TrustBadgeRow } from "@/components/TrustBadges";
 
 interface JobListCardProps {
   job: Job;
@@ -78,6 +79,7 @@ function JobListCardImpl({ job, matchBadge }: JobListCardProps) {
             {job.title}
           </h3>
           <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{job.company}</p>
+          <TrustBadgeRow job={job} size="sm" className="mt-1.5" />
 
           {/* Info */}
           <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">

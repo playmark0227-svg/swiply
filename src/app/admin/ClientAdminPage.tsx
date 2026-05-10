@@ -298,6 +298,14 @@ function AdminShell({ onSignOut }: { onSignOut: () => void }) {
 
         <div className="px-3 pb-5">
           <Link
+            href="/admin/scout/"
+            className="flex items-center gap-2 justify-center w-full px-3 py-2.5 rounded-xl text-[12px] font-extrabold text-cyan-200 bg-gradient-to-r from-cyan-500/15 to-fuchsia-500/15 border border-cyan-300/20 hover:from-cyan-500/25 hover:to-fuchsia-500/25 mb-2"
+          >
+            <span>🤖</span>
+            <span>AI スカウト</span>
+            <span className="text-cyan-300">→</span>
+          </Link>
+          <Link
             href="/"
             className="block text-center w-full px-3 py-2 rounded-xl text-[12px] text-white/60 hover:bg-white/5 mb-2"
           >

@@ -4,6 +4,7 @@ import { memo, useEffect, useRef, useState } from "react";
 import { Job } from "@/types/job";
 import { getJobVideo } from "@/lib/services/jobMedia";
 import { getVideoUrl, isVideoRef } from "@/lib/services/videoStore";
+import { TrustBadgeRow } from "@/components/TrustBadges";
 
 interface JobCardProps {
   job: Job;
@@ -100,11 +101,12 @@ function JobCardImpl({ job, active = true }: JobCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-black/5 pointer-events-none" />
       </div>
 
-      {/* Top-left badge */}
-      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
+      {/* Top-left badges (employment type + trust signals) */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start max-w-[80%]">
         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/90 text-gray-900 backdrop-blur-sm shadow-sm">
           {job.employmentType}
         </span>
+        <TrustBadgeRow job={job} size="sm" />
       </div>
 
       {/* Mute / unmute toggle */}

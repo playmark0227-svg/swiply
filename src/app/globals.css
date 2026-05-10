@@ -32,3 +32,36 @@ body {
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/*
+ * Print styles for /brand/?company=… (the parent-friendly handout
+ * derived from each company's BrandPage). Applies to the wrapper class
+ * `.brand-page` set on the route's root element.
+ */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #1f2937 !important;
+  }
+  .brand-page {
+    background: #ffffff !important;
+  }
+  /* Hide nav, sticky headers, bottom nav, etc. */
+  .brand-page .print\:hidden,
+  header[class*="sticky"],
+  nav,
+  footer.print\:hidden {
+    display: none !important;
+  }
+  /* Force fluid widths on print */
+  .brand-page article {
+    max-width: none !important;
+    padding: 16mm !important;
+  }
+  .brand-page section {
+    page-break-inside: avoid;
+  }
+  .brand-page video {
+    display: none !important;
+  }
+}

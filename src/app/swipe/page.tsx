@@ -1,20 +1,54 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import SwipeDeck from "@/components/SwipeDeck";
 import Logo from "@/components/Logo";
-import { getJobsByType } from "@/lib/services/jobs";
+import { SuspendedScreen } from "@/components/PenaltyBadges";
+import { getJobsByType, prioritizeForSwipe } from "@/lib/services/jobs";
+import {
+  evaluateNoShows,
+  getUserPenalty,
+  isUserSuspended,
+  subscribePenalties,
+  type PenaltyState,
+} from "@/lib/services/penalties";
 import type { Job, JobType } from "@/types/job";
 
 export default function SwipePage() {
   const [jobType, setJobType] = useState<JobType>("career");
   const [jobs, setJobs] = useState<Job[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [penalty, setPenalty] = useState<PenaltyState | null>(null);
+  const [instantOnly, setInstantOnly] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
 
   useEffect(() => {
     getJobsByType(jobType).then(setJobs);
   }, [jobType]);
+
+  // Apply FOUNDING/instant-interview prioritization + active filters.
+  const orderedJobs = useMemo(() => {
+    let list = jobs;
+    if (instantOnly) list = list.filter((j) => j.instantInterview);
+    if (verifiedOnly) list = list.filter((j) => j.verified);
+    return prioritizeForSwipe(list);
+  }, [jobs, instantOnly, verifiedOnly]);
+
+  // Run no-show sweep on mount + keep penalty state in sync. The sweep
+  // is cheap (just a localStorage scan) — running it on every page load
+  // keeps the system honest even if the user closes the browser before
+  // a scheduled interview ends.
+  useEffect(() => {
+    evaluateNoShows();
+    const refresh = () => setPenalty(getUserPenalty());
+    refresh();
+    return subscribePenalties(refresh);
+  }, []);
+
+  if (penalty && isUserSuspended()) {
+    return <SuspendedScreen penalty={penalty} />;
+  }
 
   const TYPE_OPTIONS: { value: JobType; label: string }[] = [
     { value: "baito", label: "アルバイト" },
@@ -92,9 +126,32 @@ export default function SwipePage() {
           </aside>
 
           {/* Card area */}
-          <div className="relative flex-1 min-w-0 h-full">
-            <div className="h-full mx-auto p-2 md:py-6 md:px-4 max-w-lg md:max-w-[420px] lg:max-w-[440px] xl:max-w-[480px]">
-              <SwipeDeck key={jobType} jobs={jobs} />
+          <div className="relative flex-1 min-w-0 h-full flex flex-col">
+            {/* Quick-filter chips (mobile + desktop) */}
+            <div className="flex items-center gap-2 px-3 pt-2 md:px-4 md:pt-4">
+              <FilterChip
+                active={instantOnly}
+                onToggle={() => setInstantOnly((v) => !v)}
+                emoji="🔥"
+                label="今日明日面接OK"
+                accent="rose"
+              />
+              <FilterChip
+                active={verifiedOnly}
+                onToggle={() => setVerifiedOnly((v) => !v)}
+                emoji="✓"
+                label="確認済み"
+                accent="emerald"
+              />
+              <span className="ml-auto text-[10px] tabular-nums text-gray-400">
+                {orderedJobs.length}件
+              </span>
+            </div>
+            <div className="h-full mx-auto p-2 md:py-4 md:px-4 max-w-lg md:max-w-[420px] lg:max-w-[440px] xl:max-w-[480px] flex-1 min-h-0">
+              <SwipeDeck
+                key={`${jobType}-${instantOnly}-${verifiedOnly}`}
+                jobs={orderedJobs}
+              />
             </div>
           </div>
 
@@ -109,6 +166,43 @@ export default function SwipePage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function FilterChip({
+  active,
+  onToggle,
+  emoji,
+  label,
+  accent,
+}: {
+  active: boolean;
+  onToggle: () => void;
+  emoji: string;
+  label: string;
+  accent: "rose" | "emerald";
+}) {
+  const accents = {
+    rose: {
+      on: "bg-rose-500 text-white border-rose-500 shadow-rose-200/50",
+      off: "bg-white text-rose-700 border-rose-200 hover:bg-rose-50",
+    },
+    emerald: {
+      on: "bg-emerald-500 text-white border-emerald-500 shadow-emerald-200/50",
+      off: "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50",
+    },
+  }[accent];
+  return (
+    <button
+      onClick={onToggle}
+      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[11px] font-extrabold transition shadow-sm active:scale-95 ${
+        active ? accents.on : accents.off
+      }`}
+      aria-pressed={active}
+    >
+      <span aria-hidden>{emoji}</span>
+      <span>{label}</span>
+    </button>
   );
 }
 

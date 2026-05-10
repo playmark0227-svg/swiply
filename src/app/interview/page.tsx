@@ -24,7 +24,13 @@ import {
   getInterviewById,
   subscribeInterviews,
 } from "@/lib/services/interviews";
+import {
+  evaluateNoShows,
+  getUserPenalty,
+  isUserSuspended,
+} from "@/lib/services/penalties";
 import { useAuth } from "@/components/AuthProvider";
+import { SuspendedScreen } from "@/components/PenaltyBadges";
 import InterviewConsentDialog from "@/components/InterviewConsentDialog";
 
 const InterviewRoom = dynamic(() => import("@/components/InterviewRoom"), {
@@ -61,6 +67,13 @@ function InterviewPageInner() {
     InterviewAppointment | null | undefined
   >(undefined);
   const [consent, setConsent] = useState<boolean | null>(null);
+  // Lazy-init: run the no-show sweep + check suspension once on mount.
+  // localStorage reads/writes during init are fine — no React re-render.
+  const [suspended] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    evaluateNoShows();
+    return isUserSuspended();
+  });
 
   // Resolve from localStorage, and re-resolve on cross-tab updates.
   useEffect(() => {
@@ -69,6 +82,10 @@ function InterviewPageInner() {
     refresh();
     return subscribeInterviews(refresh);
   }, [id]);
+
+  if (suspended) {
+    return <SuspendedScreen penalty={getUserPenalty()} />;
+  }
 
   // Bail out before the effect even runs when the URL is malformed.
   if (!id) return <NotFoundView id="" />;

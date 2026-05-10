@@ -8,6 +8,14 @@ import BottomNav from "@/components/BottomNav";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/components/AuthProvider";
 import InterviewBookingModal from "@/components/InterviewBookingModal";
+import { TrustBadgeRow } from "@/components/TrustBadges";
+import { NoShowBadge } from "@/components/PenaltyBadges";
+import {
+  evaluateNoShows,
+  getUserPenalty,
+  subscribePenalties,
+  type PenaltyState,
+} from "@/lib/services/penalties";
 import {
   type Match,
   type Message,
@@ -25,6 +33,8 @@ import {
   subscribeInterviews,
   timeUntil,
 } from "@/lib/services/interviews";
+import { getJobById } from "@/lib/services/jobs";
+import type { Job } from "@/types/job";
 import { haptic } from "@/lib/haptic";
 
 function relativeTime(iso: string): string {
@@ -50,6 +60,7 @@ export default function MessagesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [penalty, setPenalty] = useState<PenaltyState | null>(null);
 
   // Subscribe to match/message changes
   useEffect(() => {
@@ -60,6 +71,14 @@ export default function MessagesPage() {
     refresh();
     return subscribeMatches(refresh);
   }, [selectedId]);
+
+  // Penalty sweep + subscription. Read-only so we don't gate the page.
+  useEffect(() => {
+    evaluateNoShows();
+    const refresh = () => setPenalty(getUserPenalty());
+    refresh();
+    return subscribePenalties(refresh);
+  }, []);
 
   // Mark thread as read when opened
   useEffect(() => {
@@ -82,11 +101,25 @@ export default function MessagesPage() {
       <Header />
       <main className="flex-1 max-w-lg md:max-w-6xl mx-auto w-full px-0 md:px-6 pt-0 md:pt-6 pb-16 md:pb-12">
         <div className="hidden md:block px-2 mb-4">
-          <h1 className="text-2xl font-extrabold text-gray-900">メッセージ</h1>
-          <p className="text-[12px] text-gray-500 mt-0.5">
+          <div className="flex items-center gap-2 mb-0.5">
+            <h1 className="text-2xl font-extrabold text-gray-900">メッセージ</h1>
+            {penalty && penalty.level !== "green" && (
+              <NoShowBadge level={penalty.level} count={penalty.count} size="md" />
+            )}
+          </div>
+          <p className="text-[12px] text-gray-500">
             マッチした企業とのトーク
           </p>
         </div>
+        {penalty && penalty.level === "yellow" && (
+          <div className="mx-3 md:mx-0 mb-3 md:mb-4 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-[12px] text-amber-800 leading-relaxed">
+            <p className="font-extrabold mb-0.5">⚠️ 面接ブッチが1回記録されています</p>
+            <p>
+              次回ブッチで <span className="font-extrabold">1年間アカウント停止</span>
+              になります。日程変更が必要な時は、面接前にメッセージで連絡を。
+            </p>
+          </div>
+        )}
 
         <div className="md:grid md:grid-cols-[340px_1fr] md:gap-6 md:rounded-3xl md:bg-white md:border md:border-gray-100 md:overflow-hidden md:min-h-[70dvh]">
           {/* List */}
@@ -212,7 +245,20 @@ function ThreadView({
   const [menuOpen, setMenuOpen] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [interview, setInterview] = useState<InterviewAppointment | null>(null);
+  const [job, setJob] = useState<Job | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Pull the underlying Job so we can show trust badges (verified /
+  // founding / instant-interview) in the thread header.
+  useEffect(() => {
+    let cancelled = false;
+    getJobById(match.jobId).then((j) => {
+      if (!cancelled) setJob(j ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [match.jobId]);
 
   // Auto-scroll to the bottom when new messages arrive
   useEffect(() => {
@@ -268,9 +314,14 @@ function ThreadView({
             className="w-10 h-10 rounded-xl object-cover shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold text-gray-900 truncate group-hover:text-violet-600 transition">
-              {match.jobCompany}
-            </p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="text-sm font-extrabold text-gray-900 truncate group-hover:text-violet-600 transition">
+                {match.jobCompany}
+              </p>
+              {job && (
+                <TrustBadgeRow job={job} size="sm" interactive className="shrink-0" />
+              )}
+            </div>
             <p className="text-[11px] text-gray-500 truncate">{match.jobTitle}</p>
           </div>
         </Link>
@@ -320,6 +371,12 @@ function ThreadView({
                   className="block px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50"
                 >
                   求人詳細を見る
+                </Link>
+                <Link
+                  href={`/brand/?company=${encodeURIComponent(match.jobCompany)}`}
+                  className="block px-4 py-2.5 text-[12px] text-gray-700 hover:bg-gray-50"
+                >
+                  会社ブランドページ
                 </Link>
                 <button
                   onClick={() => {

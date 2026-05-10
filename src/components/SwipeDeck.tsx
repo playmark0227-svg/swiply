@@ -6,9 +6,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import SwipeCard from "./SwipeCard";
 import JobCard from "./JobCard";
 import Logo from "./Logo";
+import DailyLimitModal from "./DailyLimitModal";
 import { Job } from "@/types/job";
 import { addLike, removeLike } from "@/lib/services/likes";
 import { maybeMatch } from "@/lib/services/matches";
+import {
+  canLikeToday,
+  decrementTodayLike,
+  getTodayLikeRemaining,
+  incrementTodayLike,
+  LIKE_DAILY_LIMIT,
+} from "@/lib/services/dailyLimits";
 import { useToast } from "./Toast";
 import { haptic } from "@/lib/haptic";
 
@@ -26,6 +34,14 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showToast, setShowToast] = useState<"like" | "nope" | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [limitModalOpen, setLimitModalOpen] = useState(false);
+  // Lazy-init from localStorage so the counter is correct on first paint
+  // without an extra effect. Subsequent updates happen inside handlers.
+  const [remaining, setRemaining] = useState<number>(() =>
+    typeof window === "undefined"
+      ? LIKE_DAILY_LIMIT
+      : getTodayLikeRemaining()
+  );
   const router = useRouter();
   const toast = useToast();
 
@@ -47,21 +63,29 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   }, [handleNext]);
 
   const handleSwipeRight = useCallback(() => {
-    if (currentJob) {
-      addLike(currentJob.id);
-      // Probabilistic mutual match — if it fires, the matches service
-      // creates a Match record + system message + notification, and
-      // schedules an NPC intro reply.
-      const m = maybeMatch({
-        jobId: currentJob.id,
-        jobTitle: currentJob.title,
-        jobCompany: currentJob.company,
-        jobImage: currentJob.image,
-        featured: currentJob.featured,
-      });
-      if (m) {
-        toast.show(`🎉 ${currentJob.company} とマッチしました！`, "success");
-      }
+    if (!currentJob) return;
+    if (!canLikeToday()) {
+      // Out of LIKE quota — block the swipe + open the explainer modal.
+      // The card stays put so the user can still 左フリック / 上フリック.
+      haptic("warn");
+      setLimitModalOpen(true);
+      return;
+    }
+    incrementTodayLike();
+    setRemaining(getTodayLikeRemaining());
+    addLike(currentJob.id);
+    // Probabilistic mutual match — if it fires, the matches service
+    // creates a Match record + system message + notification, and
+    // schedules an NPC intro reply.
+    const m = maybeMatch({
+      jobId: currentJob.id,
+      jobTitle: currentJob.title,
+      jobCompany: currentJob.company,
+      jobImage: currentJob.image,
+      featured: currentJob.featured,
+    });
+    if (m) {
+      toast.show(`🎉 ${currentJob.company} とマッチしました！`, "success");
     }
     handleNext("right");
   }, [currentJob, handleNext, toast]);
@@ -80,6 +104,9 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
     if (last.direction === "right") {
       const job = jobs[last.index];
       if (job) await removeLike(job.id);
+      // Refund the daily quota — undoing a LIKE shouldn't consume it.
+      decrementTodayLike();
+      setRemaining(getTodayLikeRemaining());
     }
     setHistory((prev) => prev.slice(0, -1));
     setCurrentIndex(last.index);
@@ -275,9 +302,19 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
           </div>
         </div>
 
-        <div className="absolute top-3 right-3 z-30">
+        <div className="absolute top-3 right-3 z-30 flex flex-col items-end gap-1">
           <span className="text-[10px] font-bold text-white/60 bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full">
             {currentIndex + 1} / {jobs.length}
+          </span>
+          <span
+            className={`text-[10px] font-extrabold backdrop-blur-sm px-2 py-0.5 rounded-full tabular-nums ${
+              remaining <= 2
+                ? "bg-rose-500/30 text-rose-100 border border-rose-300/40"
+                : "bg-white/15 text-white/80"
+            }`}
+            title="今日のLIKE残り"
+          >
+            ❤ {remaining}/{LIKE_DAILY_LIMIT}
           </span>
         </div>
       </div>
@@ -321,14 +358,23 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
 
         <button
           onClick={handleSwipeRight}
-          className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 shadow-lg shadow-emerald-200/60 flex items-center justify-center active:scale-90 transition-all"
-          aria-label="LIKE"
+          className={`relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all ${
+            remaining > 0
+              ? "bg-gradient-to-br from-emerald-400 to-green-500 shadow-emerald-200/60"
+              : "bg-gradient-to-br from-gray-300 to-gray-400 shadow-gray-200/60"
+          }`}
+          aria-label={remaining > 0 ? "LIKE" : "今日のLIKE残数なし"}
         >
           <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
           </svg>
         </button>
       </div>
+
+      <DailyLimitModal
+        open={limitModalOpen}
+        onClose={() => setLimitModalOpen(false)}
+      />
     </div>
   );
 }

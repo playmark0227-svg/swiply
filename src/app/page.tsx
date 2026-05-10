@@ -520,7 +520,7 @@ function FeatureShowcase() {
         <FeatureCard
           step="03"
           title="ビデオ面接 + AI 振り返り"
-          body="トーク画面から面接予約 → アプリ内ビデオ通話。終了後 AI が振り返りレポートを作成。"
+          body="アプリ内ビデオ通話＋AIが両者の会話をリアルタイム監視。ハラスメント警告、聞くべき質問の提案、終了後の評価レポートまで自動。"
           accent="pink"
           badge="NEW"
           icon={
@@ -664,18 +664,22 @@ function BusinessBanner() {
             </p>
 
             {/* Value props — terse, scannable */}
-            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-6 md:mb-7">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-7">
               <BizValueProp
                 title="動画で求人を伝える"
                 body="写真+30秒動画でスクロール率が桁違い。"
               />
               <BizValueProp
-                title="マッチ精度の高い候補"
-                body="LIKE×LIKEの両思いだけが面談に進む。"
+                title="一括応募が来ない"
+                body="LIKE上限10件/日。本気の応募だけが残る。"
               />
               <BizValueProp
-                title="面接まで丸ごとアプリ"
-                body="ビデオ面接 + AI 振り返りで工数削減。"
+                title="AI面接ファシリテーター"
+                body="ハラスメント警告＋振り返りレポートを自動生成。"
+              />
+              <BizValueProp
+                title="今日明日面接OK"
+                body="🔥 即日採用枠で「明日にも面接」を実現。"
               />
             </ul>
 

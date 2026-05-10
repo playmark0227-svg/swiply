@@ -289,6 +289,14 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
                 <div className="rounded-2xl border border-gray-100 p-4">
                   <p className="font-bold text-gray-900 text-sm">{job.company}</p>
                   <p className="text-xs text-gray-500 leading-relaxed mt-1.5">{job.companyDescription}</p>
+                  <Link
+                    href={`/brand/?company=${encodeURIComponent(job.company)}`}
+                    className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-100 text-[11px] font-extrabold transition"
+                  >
+                    <span>📄</span>
+                    <span>会社ブランドページ（親に見せる用）</span>
+                    <span>→</span>
+                  </Link>
                 </div>
               </section>
             )}
