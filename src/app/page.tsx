@@ -496,6 +496,8 @@ function FeatureShowcase() {
           title="スワイプで求人選び"
           body="写真とキャッチで直感判断。右でLIKE、左でパス、上で即応募。通勤の3駅分でちゃんと進む。"
           accent="violet"
+          image={`${BASE_PATH}/images/screens/screen-swipe.jpg`}
+          imageAlt="SWIPLY のスワイプ画面"
           icon={
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2a3 3 0 00-3 3v6a3 3 0 006 0V5a3 3 0 00-3-3zm-7 9a7 7 0 0014 0h-2a5 5 0 01-10 0H5zm6 9.93V19h2v1.93A8 8 0 0019.93 13H22a10 10 0 01-9 9.93V20.93z" />
@@ -509,6 +511,8 @@ function FeatureShowcase() {
           title="マッチでメッセージ開始"
           body="お互いLIKEでマッチ成立 → トーク開始。日程調整も雑談も、温度感そのままで。"
           accent="fuchsia"
+          image={`${BASE_PATH}/images/screens/screen-messages.jpg`}
+          imageAlt="SWIPLY のメッセージ画面"
           icon={
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2zM7 9h10v2H7zm6 5H7v-2h6z" />
@@ -558,6 +562,9 @@ interface FeatureCardProps {
   href: string;
   cta: string;
   badge?: string;
+  /** Optional product screenshot shown in the upper "preview" area. */
+  image?: string;
+  imageAlt?: string;
 }
 
 function FeatureCard({
@@ -569,28 +576,30 @@ function FeatureCard({
   href,
   cta,
   badge,
+  image,
+  imageAlt,
 }: FeatureCardProps) {
   const accentClasses = {
     violet: {
-      bg: "bg-violet-50",
+      bg: "bg-gradient-to-br from-violet-100 via-fuchsia-50 to-white",
       text: "text-violet-700",
       icon: "from-violet-500 to-fuchsia-500",
       border: "hover:border-violet-200",
     },
     fuchsia: {
-      bg: "bg-fuchsia-50",
+      bg: "bg-gradient-to-br from-fuchsia-100 via-pink-50 to-white",
       text: "text-fuchsia-700",
       icon: "from-fuchsia-500 to-pink-500",
       border: "hover:border-fuchsia-200",
     },
     pink: {
-      bg: "bg-pink-50",
+      bg: "bg-gradient-to-br from-pink-100 via-rose-50 to-white",
       text: "text-pink-700",
       icon: "from-pink-500 to-rose-500",
       border: "hover:border-pink-200",
     },
     emerald: {
-      bg: "bg-emerald-50",
+      bg: "bg-gradient-to-br from-emerald-100 via-teal-50 to-white",
       text: "text-emerald-700",
       icon: "from-emerald-500 to-teal-500",
       border: "hover:border-emerald-200",
@@ -600,32 +609,64 @@ function FeatureCard({
   return (
     <Link
       href={href}
-      className={`group relative bg-white rounded-3xl border border-gray-100 ${accentClasses.border} p-5 md:p-6 flex flex-col transition-all hover:shadow-lg hover:shadow-gray-200/40 active:scale-[0.99]`}
+      className={`group relative bg-white rounded-3xl border border-gray-100 ${accentClasses.border} flex flex-col overflow-hidden transition-all hover:shadow-lg hover:shadow-gray-200/40 active:scale-[0.99]`}
     >
-      {badge && (
-        <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-[9px] font-black tracking-[0.2em]">
-          {badge}
-        </span>
-      )}
-      <div className="flex items-center gap-3 mb-3">
-        <div
-          className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${accentClasses.icon} text-white flex items-center justify-center shadow-sm`}
-        >
-          {icon}
+      {/* Preview area — either a real product screenshot or an iconic
+          gradient placeholder. Both share the same height so all cards
+          line up regardless of which have shots yet. */}
+      <div
+        className={`relative aspect-[5/3] md:aspect-[4/3] ${accentClasses.bg} overflow-hidden border-b border-gray-100`}
+      >
+        {image ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={image}
+              alt={imageAlt ?? title}
+              loading="lazy"
+              className="absolute left-1/2 -translate-x-1/2 top-3 md:top-4 w-[70%] md:w-[62%] rounded-xl shadow-xl shadow-gray-900/15 ring-1 ring-black/5 object-cover object-top"
+              style={{ aspectRatio: "9 / 13" }}
+            />
+            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className={`w-20 h-20 rounded-3xl bg-gradient-to-br ${accentClasses.icon} text-white flex items-center justify-center shadow-xl shadow-gray-900/15 scale-110 group-hover:scale-125 transition-transform`}
+            >
+              <div className="scale-[2.4]">{icon}</div>
+            </div>
+          </div>
+        )}
+        {badge && (
+          <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-[9px] font-black tracking-[0.2em] shadow-sm">
+            {badge}
+          </span>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-5 md:p-6 flex flex-col flex-1">
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className={`w-9 h-9 rounded-2xl bg-gradient-to-br ${accentClasses.icon} text-white flex items-center justify-center shadow-sm`}
+          >
+            {icon}
+          </div>
+          <span className={`text-[10px] tracking-[0.25em] font-black ${accentClasses.text} tabular-nums`}>
+            STEP {step}
+          </span>
         </div>
-        <span className={`text-[10px] tracking-[0.25em] font-black ${accentClasses.text} tabular-nums`}>
-          STEP {step}
+        <h3 className="text-[15px] md:text-[16px] font-extrabold text-gray-900 leading-snug mb-1.5">
+          {title}
+        </h3>
+        <p className="text-[12px] md:text-[13px] text-gray-600 leading-relaxed flex-1">{body}</p>
+        <span
+          className={`inline-flex items-center gap-1 mt-4 text-[11px] font-bold ${accentClasses.text} group-hover:gap-2 transition-all`}
+        >
+          {cta}
         </span>
       </div>
-      <h3 className="text-[15px] md:text-[16px] font-extrabold text-gray-900 leading-snug mb-1.5">
-        {title}
-      </h3>
-      <p className="text-[12px] md:text-[13px] text-gray-600 leading-relaxed flex-1">{body}</p>
-      <span
-        className={`inline-flex items-center gap-1 mt-4 text-[11px] font-bold ${accentClasses.text} group-hover:gap-2 transition-all`}
-      >
-        {cta}
-      </span>
     </Link>
   );
 }
