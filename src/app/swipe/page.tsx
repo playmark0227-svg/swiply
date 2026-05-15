@@ -73,7 +73,7 @@ export default function SwipePage() {
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="relative flex items-center gap-1.5 px-3 md:px-4 py-1.5 md:py-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               <span className="text-xs md:text-sm font-bold text-gray-700">{typeLabel}</span>
               <svg
@@ -84,12 +84,18 @@ export default function SwipePage() {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
+              {(instantOnly || verifiedOnly) && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gradient-to-br from-rose-500 to-fuchsia-500 ring-2 ring-white"
+                  aria-label="絞り込み適用中"
+                />
+              )}
             </button>
 
             {dropdownOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden min-w-[160px]">
+                <div className="absolute right-0 top-full mt-1 z-50 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden min-w-[200px]">
                   {TYPE_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
@@ -106,6 +112,28 @@ export default function SwipePage() {
                       {opt.label}
                     </button>
                   ))}
+                  {/* Filter toggles — folded into the dropdown so they
+                      don't take vertical space above the swipe deck. */}
+                  <div className="border-t border-gray-100 px-3 py-2">
+                    <p className="text-[9px] tracking-[0.2em] font-black text-gray-400 px-1 mb-1">
+                      絞り込み
+                    </p>
+                    <FilterToggle
+                      active={instantOnly}
+                      onToggle={() => setInstantOnly((v) => !v)}
+                      emoji="🔥"
+                      label="今日明日面接OK"
+                    />
+                    <FilterToggle
+                      active={verifiedOnly}
+                      onToggle={() => setVerifiedOnly((v) => !v)}
+                      emoji="✓"
+                      label="SWIPLY確認済み"
+                    />
+                    <p className="text-[10px] text-gray-400 tabular-nums px-1 mt-1">
+                      {orderedJobs.length}件 ヒット
+                    </p>
+                  </div>
                 </div>
               </>
             )}
@@ -125,29 +153,11 @@ export default function SwipePage() {
             </p>
           </aside>
 
-          {/* Card area */}
-          <div className="relative flex-1 min-w-0 h-full flex flex-col">
-            {/* Quick-filter chips (mobile + desktop) */}
-            <div className="flex items-center gap-2 px-3 pt-2 md:px-4 md:pt-4">
-              <FilterChip
-                active={instantOnly}
-                onToggle={() => setInstantOnly((v) => !v)}
-                emoji="🔥"
-                label="今日明日面接OK"
-                accent="rose"
-              />
-              <FilterChip
-                active={verifiedOnly}
-                onToggle={() => setVerifiedOnly((v) => !v)}
-                emoji="✓"
-                label="確認済み"
-                accent="emerald"
-              />
-              <span className="ml-auto text-[10px] tabular-nums text-gray-400">
-                {orderedJobs.length}件
-              </span>
-            </div>
-            <div className="h-full mx-auto p-2 md:py-4 md:px-4 max-w-lg md:max-w-[420px] lg:max-w-[440px] xl:max-w-[480px] flex-1 min-h-0">
+          {/* Card area — restored to its full-bleed pre-filter layout.
+              Filter UI lives in the header dropdown now, so the deck
+              owns the entire vertical space. */}
+          <div className="relative flex-1 min-w-0 h-full">
+            <div className="h-full mx-auto p-2 md:py-6 md:px-4 max-w-lg md:max-w-[420px] lg:max-w-[440px] xl:max-w-[480px]">
               <SwipeDeck
                 key={`${jobType}-${instantOnly}-${verifiedOnly}`}
                 jobs={orderedJobs}
@@ -169,39 +179,48 @@ export default function SwipePage() {
   );
 }
 
-function FilterChip({
+function FilterToggle({
   active,
   onToggle,
   emoji,
   label,
-  accent,
 }: {
   active: boolean;
   onToggle: () => void;
   emoji: string;
   label: string;
-  accent: "rose" | "emerald";
 }) {
-  const accents = {
-    rose: {
-      on: "bg-rose-500 text-white border-rose-500 shadow-rose-200/50",
-      off: "bg-white text-rose-700 border-rose-200 hover:bg-rose-50",
-    },
-    emerald: {
-      on: "bg-emerald-500 text-white border-emerald-500 shadow-emerald-200/50",
-      off: "bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50",
-    },
-  }[accent];
   return (
     <button
       onClick={onToggle}
-      className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[11px] font-extrabold transition shadow-sm active:scale-95 ${
-        active ? accents.on : accents.off
+      className={`w-full flex items-center gap-2 px-2 py-2 rounded-lg text-[12px] font-bold transition ${
+        active
+          ? "bg-violet-50 text-violet-700"
+          : "text-gray-600 hover:bg-gray-50"
       }`}
       aria-pressed={active}
     >
+      <span
+        className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
+          active
+            ? "bg-violet-500 border-violet-500 text-white"
+            : "bg-white border-gray-300"
+        }`}
+      >
+        {active && (
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={3.5}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </span>
       <span aria-hidden>{emoji}</span>
-      <span>{label}</span>
+      <span className="flex-1 text-left">{label}</span>
     </button>
   );
 }
