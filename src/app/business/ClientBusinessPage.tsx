@@ -198,8 +198,14 @@ function BusinessHeader() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/"
+            href="/dashboard"
             className="hidden md:inline-flex text-[11px] text-white/50 hover:text-white px-3 py-2 rounded-lg transition"
+          >
+            管理画面 →
+          </Link>
+          <Link
+            href="/"
+            className="hidden lg:inline-flex text-[11px] text-white/50 hover:text-white px-3 py-2 rounded-lg transition"
           >
             B2C版を見る →
           </Link>
@@ -1347,6 +1353,7 @@ function BusinessFooter() {
             <FooterLink href="#faq">よくある質問</FooterLink>
           </FooterCol>
           <FooterCol title="サポート">
+            <FooterLink href="/dashboard">企業管理画面</FooterLink>
             <FooterLink href="#contact">お問い合わせ</FooterLink>
             <FooterLink href="#contact">資料ダウンロード</FooterLink>
             <FooterLink href="#contact">オンライン相談予約</FooterLink>
