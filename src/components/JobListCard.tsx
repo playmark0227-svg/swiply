@@ -17,17 +17,17 @@ function JobListCardImpl({ job, matchBadge }: JobListCardProps) {
   const fresh = isNew(job, 3);
   return (
     <Link href={`/job/${job.id}`} className="block group">
-      <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100/80 group-hover:shadow-xl group-hover:shadow-gray-200/60 group-hover:border-violet-100 group-hover:-translate-y-1 transition-all duration-200 group-active:scale-[0.98]">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-sm shadow-gray-200/50 border border-gray-100/80 group-hover:shadow-xl group-hover:shadow-violet-100/40 group-hover:border-violet-100 group-hover:-translate-y-1 transition-all duration-300 group-active:scale-[0.98]">
         {/* Image */}
-        <div className="relative aspect-[4/3]">
+        <div className="relative aspect-[4/3] overflow-hidden">
           <Image
             src={job.image}
             alt={job.company}
             fill
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 50vw, 200px"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
           {/* Top-left status badges */}
           <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
@@ -62,7 +62,7 @@ function JobListCardImpl({ job, matchBadge }: JobListCardProps) {
 
           {/* Salary overlay */}
           <div className="absolute bottom-2 left-2 right-2 flex items-end justify-between gap-2">
-            <span className="text-[13px] font-extrabold text-white drop-shadow">
+            <span className="px-2 py-0.5 rounded-lg bg-emerald-500/90 backdrop-blur-sm text-[12px] font-black text-white shadow-sm">
               {job.salary}
             </span>
             {matchBadge && (
@@ -101,6 +101,11 @@ function JobListCardImpl({ job, matchBadge }: JobListCardProps) {
                 {tag}
               </span>
             ))}
+            {job.tags.length > 2 && (
+              <span className="px-1.5 py-0.5 rounded-md bg-gray-50 text-[9px] font-semibold text-gray-400">
+                +{job.tags.length - 2}
+              </span>
+            )}
           </div>
         </div>
       </div>

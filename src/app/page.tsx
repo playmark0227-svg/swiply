@@ -313,41 +313,45 @@ export default function Home() {
       </FadeInSection>
 
       {/* ── Dark product photo section — extended to 4 steps ── */}
-      <section className="bg-gray-950 text-white my-6">
-        <div className="max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto px-6 py-10">
+      <FadeInSection>
+      <section className="bg-gray-950 text-white my-6 relative overflow-hidden">
+        {/* Decorative gradient blobs */}
+        <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
+        <div className="relative max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto px-6 py-12 md:py-16">
           <p className="text-[10px] tracking-[0.3em] text-violet-300 font-bold mb-3">HOW IT WORKS</p>
           <h2 className="text-[22px] md:text-[34px] font-black leading-tight mb-8">
             3分で、はじめられる。
           </h2>
 
-          <ol className="space-y-6">
-            <li className="flex gap-5">
-              <div className="shrink-0 w-10 h-10 rounded-full border-2 border-violet-400 flex items-center justify-center text-violet-300 text-sm font-black">
+          <ol className="space-y-5 md:space-y-0 md:grid md:grid-cols-2 md:gap-6">
+            <li className="flex gap-4 md:flex-col md:gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition">
+              <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-violet-500/20">
                 1
               </div>
-              <div className="pt-1.5">
+              <div>
                 <p className="font-bold text-[15px] mb-1">プロフィールをつくる</p>
                 <p className="text-[12px] text-gray-400 leading-relaxed">
                   写真、ひとこと、希望のざっくりした方向性。&quot;書かない&quot;ことも選択肢。
                 </p>
               </div>
             </li>
-            <li className="flex gap-5">
-              <div className="shrink-0 w-10 h-10 rounded-full border-2 border-violet-400 flex items-center justify-center text-violet-300 text-sm font-black">
+            <li className="flex gap-4 md:flex-col md:gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition">
+              <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-violet-500/20">
                 2
               </div>
-              <div className="pt-1.5">
+              <div>
                 <p className="font-bold text-[15px] mb-1">スワイプする</p>
                 <p className="text-[12px] text-gray-400 leading-relaxed">
                   右でLIKE、左でパス、上にフリックで即応募。通勤中の3駅分でも結構進む。
                 </p>
               </div>
             </li>
-            <li className="flex gap-5">
-              <div className="shrink-0 w-10 h-10 rounded-full border-2 border-violet-400 flex items-center justify-center text-violet-300 text-sm font-black">
+            <li className="flex gap-4 md:flex-col md:gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition">
+              <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-500 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-fuchsia-500/20">
                 3
               </div>
-              <div className="pt-1.5">
+              <div>
                 <p className="font-bold text-[15px] mb-1">マッチしたら、メッセージ</p>
                 <p className="text-[12px] text-gray-400 leading-relaxed">
                   お互いLIKEでマッチ成立。チャットで、雑談から面接日程まで。
@@ -355,14 +359,14 @@ export default function Home() {
                 </p>
               </div>
             </li>
-            <li className="flex gap-5">
-              <div className="shrink-0 w-10 h-10 rounded-full border-2 border-pink-400 flex items-center justify-center text-pink-300 text-sm font-black relative">
+            <li className="flex gap-4 md:flex-col md:gap-3 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition relative">
+              <div className="shrink-0 w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white text-sm font-black shadow-lg shadow-pink-500/20 relative">
                 4
-                <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-[8px] font-black tracking-wider">
+                <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-gradient-to-r from-pink-500 to-fuchsia-500 text-white text-[7px] font-black tracking-wider ring-2 ring-gray-950">
                   NEW
                 </span>
               </div>
-              <div className="pt-1.5">
+              <div>
                 <p className="font-bold text-[15px] mb-1">ビデオ面接 + AI 振り返り</p>
                 <p className="text-[12px] text-gray-400 leading-relaxed">
                   チャットからそのまま面接予約。アプリ内でビデオ通話して、
@@ -374,12 +378,13 @@ export default function Home() {
 
           <Link
             href="/swipe"
-            className="mt-8 block text-center py-3.5 bg-white text-gray-900 font-black text-sm rounded-2xl active:scale-[0.98] transition"
+            className="mt-10 block text-center py-3.5 bg-white text-gray-900 font-black text-sm rounded-2xl active:scale-[0.98] hover:scale-[1.01] transition-transform shadow-xl shadow-black/30"
           >
             試しにスワイプしてみる
           </Link>
         </div>
       </section>
+      </FadeInSection>
 
       {/* ── Voices: magazine-style, asymmetric ── */}
       <FadeInSection>
@@ -390,44 +395,47 @@ export default function Home() {
         </h2>
 
         <div className="md:grid md:grid-cols-3 md:gap-6">
-          {/* Voice 1 — left aligned, with quote mark */}
-          <div className="mb-8 md:mb-0 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6">
-            <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
-            <p className="text-[15px] md:text-[15px] text-gray-800 leading-[1.8] font-medium">
+          {/* Voice 1 */}
+          <div className="mb-8 md:mb-0 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6 md:shadow-sm md:shadow-gray-100/50 md:hover:shadow-lg md:hover:-translate-y-1 md:transition-all md:duration-300">
+            <p className="text-4xl text-violet-200 font-serif leading-none mb-2">&ldquo;</p>
+            <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
               月曜の授業サボって電車でスワイプしてたら、渋谷のカフェに受かってた。
               今はラテアート練習中です。店長、怒ってないといいな。
             </p>
-            <p className="text-[11px] text-gray-500 mt-4">
-              — さくらさん・大学3年（文学部）・埼玉
-            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-pink-200 to-violet-200 flex items-center justify-center text-[10px] font-black text-violet-600">S</div>
+              <p className="text-[11px] text-gray-500">さくらさん・大学3年・埼玉</p>
+            </div>
           </div>
 
           <div className="h-px bg-gray-200 my-6 md:hidden" />
 
-          {/* Voice 2 — indented right on mobile, card on desktop */}
-          <div className="mb-8 md:mb-0 pl-6 md:pl-0 border-l-2 md:border-l-0 border-violet-300 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6 md:relative md:top-6">
-            <p className="text-4xl text-gray-300 font-serif leading-none mb-2 hidden md:block">&ldquo;</p>
+          {/* Voice 2 */}
+          <div className="mb-8 md:mb-0 pl-6 md:pl-0 border-l-2 md:border-l-0 border-violet-300 md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6 md:relative md:top-6 md:shadow-sm md:shadow-gray-100/50 md:hover:shadow-lg md:hover:-translate-y-1 md:transition-all md:duration-300">
+            <p className="text-4xl text-violet-200 font-serif leading-none mb-2 hidden md:block">&ldquo;</p>
             <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
               転職サイト5つ登録して疲れた勢いでDLした。結果的にここ経由で決まった。
               写真が多いから「ここで働く自分」が想像できるのが大きい。
             </p>
-            <p className="text-[11px] text-gray-500 mt-4">
-              — けんたろうさん・28歳・前職Webデザイナー
-            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-200 to-cyan-200 flex items-center justify-center text-[10px] font-black text-blue-600">K</div>
+              <p className="text-[11px] text-gray-500">けんたろうさん・28歳・元デザイナー</p>
+            </div>
           </div>
 
           <div className="h-px bg-gray-200 my-6 md:hidden" />
 
           {/* Voice 3 */}
-          <div className="md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6">
-            <p className="text-4xl text-gray-300 font-serif leading-none mb-2">&ldquo;</p>
+          <div className="md:bg-white md:border md:border-gray-100 md:rounded-3xl md:p-6 md:shadow-sm md:shadow-gray-100/50 md:hover:shadow-lg md:hover:-translate-y-1 md:transition-all md:duration-300">
+            <p className="text-4xl text-violet-200 font-serif leading-none mb-2">&ldquo;</p>
             <p className="text-[15px] text-gray-800 leading-[1.8] font-medium">
               子育て中でもスキマ時間にサクサク見られる。週2OKの事務が見つかって、
               半年ぶりに自分の時間ができた気がする。
             </p>
-            <p className="text-[11px] text-gray-500 mt-4">
-              — ゆいさん・32歳・2児の母・千葉
-            </p>
+            <div className="flex items-center gap-2 mt-4">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-emerald-200 to-teal-200 flex items-center justify-center text-[10px] font-black text-emerald-600">Y</div>
+              <p className="text-[11px] text-gray-500">ゆいさん・32歳・2児の母・千葉</p>
+            </div>
           </div>
         </div>
       </section>
