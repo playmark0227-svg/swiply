@@ -134,7 +134,7 @@ export default function VerifyPage() {
 
   if (!profile) {
     return (
-      <div className="flex flex-col min-h-dvh bg-gray-50">
+      <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
         <Header />
         <main className="flex-1" />
         <BottomNav />
@@ -143,7 +143,7 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-3xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20">
         <h1 className="text-lg md:text-3xl font-extrabold text-gray-900 mb-1">本人確認</h1>

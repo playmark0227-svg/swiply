@@ -92,7 +92,7 @@ function Inner() {
   }
   if (!appointment) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center px-4">
+      <div className="min-h-dvh bg-[#fbf8f3] flex items-center justify-center px-4">
         <div className="text-center max-w-md">
           <p className="text-base font-extrabold text-gray-900 mb-2">
             面接が見つかりません
@@ -114,7 +114,7 @@ function Inner() {
       : appointment.analysisForCompany;
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 md:px-6 pt-4 md:pt-8 pb-20">
         <div className="mb-5">

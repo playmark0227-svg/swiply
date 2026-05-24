@@ -104,7 +104,7 @@ function InterviewPageInner() {
 
   if (appointment.status === "cancelled") {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center px-4">
+      <div className="min-h-dvh bg-[#fbf8f3] flex items-center justify-center px-4">
         <div className="text-center">
           <p className="text-base font-extrabold text-gray-900 mb-2">
             この面接はキャンセルされました
@@ -155,7 +155,7 @@ function InterviewPageInner() {
 
 function NotFoundView({ id }: { id: string }) {
   return (
-    <div className="min-h-dvh bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-dvh bg-[#fbf8f3] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <p className="text-base font-extrabold text-gray-900 mb-2">
           面接が見つかりません
