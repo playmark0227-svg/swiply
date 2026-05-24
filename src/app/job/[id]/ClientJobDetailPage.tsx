@@ -50,8 +50,9 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
 
   if (!job) {
     return (
-      <div className="flex items-center justify-center h-dvh bg-white">
-        <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+      <div className="flex flex-col items-center justify-center h-dvh bg-white gap-3">
+        <div className="w-10 h-10 border-[3px] border-violet-200 border-t-violet-500 rounded-full animate-spin" />
+        <p className="text-[12px] text-gray-400 font-medium">読み込み中...</p>
       </div>
     );
   }
@@ -108,9 +109,9 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
   const mapQuery = encodeURIComponent(job.location);
 
   return (
-    <div className="min-h-dvh bg-gray-50">
+    <div className="min-h-dvh bg-[#fbf8f3]">
       {/* Hero image */}
-      <div className="relative h-72 md:h-[420px] bg-gray-200">
+      <div className="relative h-80 md:h-[460px] bg-gray-200">
         <Image
           src={job.image}
           alt={job.company}
@@ -119,7 +120,7 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
           sizes="100vw"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/5" />
 
         <button
           onClick={() => {
@@ -162,20 +163,23 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
 
         <div className="absolute bottom-0 left-0 right-0 p-5 md:p-10 text-white">
           <div className="max-w-5xl mx-auto">
-            <p className="text-xs md:text-sm font-semibold text-amber-300 mb-1">{job.catchphrase}</p>
-            <h1 className="text-2xl md:text-4xl font-extrabold leading-tight">{job.title}</h1>
-            <p className="text-sm md:text-base text-white/70 font-medium mt-0.5 md:mt-1">{job.company}</p>
+            <p className="text-[11px] md:text-sm font-bold tracking-wider text-amber-300 mb-1.5 uppercase drop-shadow">{job.catchphrase}</p>
+            <h1 className="text-[26px] md:text-[44px] font-black leading-[1.1] drop-shadow-lg">{job.title}</h1>
+            <p className="text-[13px] md:text-base text-white/70 font-medium mt-1 md:mt-1.5">{job.company}</p>
 
-            <div className="flex items-center gap-3 mt-3 text-[11px] md:text-xs text-white/70">
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="px-3 py-1 rounded-lg bg-emerald-500/90 backdrop-blur-sm text-[13px] md:text-sm font-black text-white shadow-sm">
+                {job.salary}
+              </span>
               {typeof job.applicants === "number" && (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" /></svg>
+                <span className="px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur-sm text-[11px] font-bold text-white/80 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 8 1.34 8 4v2H4v-2c0-2.66 5.3-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" /></svg>
                   今週{job.applicants}人が応募
                 </span>
               )}
               {typeof job.views === "number" && (
-                <span className="flex items-center gap-1">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <span className="px-2.5 py-1 rounded-lg bg-white/15 backdrop-blur-sm text-[11px] font-bold text-white/80 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
@@ -188,8 +192,8 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
       </div>
 
       {/* Content */}
-      <div className="max-w-lg md:max-w-5xl mx-auto -mt-1 rounded-t-3xl bg-white relative z-10">
-        <div className="px-5 md:px-10 pt-5 md:pt-8 pb-28 md:pb-32 space-y-5 md:space-y-0 md:grid md:grid-cols-[1fr_320px] md:gap-10">
+      <div className="max-w-lg md:max-w-5xl mx-auto -mt-4 rounded-t-[2rem] bg-white relative z-10 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
+        <div className="px-5 md:px-10 pt-6 md:pt-8 pb-28 md:pb-32 space-y-5 md:space-y-0 md:grid md:grid-cols-[1fr_320px] md:gap-10">
           {/* Primary */}
           <div className="space-y-5 md:space-y-8 min-w-0">
             {application && (
@@ -393,8 +397,17 @@ export default function ClientJobDetailPage({ jobId }: { jobId: string }) {
       </div>
 
       {/* Mobile-only fixed bottom bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100/50 px-5 py-3 z-50">
-        <div className="max-w-lg mx-auto flex gap-3">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100/50 px-5 py-3 z-50 safe-area-bottom">
+        <div className="max-w-lg mx-auto flex gap-3 items-center">
+          <button
+            onClick={handleShare}
+            aria-label="共有"
+            className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center active:scale-90 transition-all hover:bg-gray-200"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M16 6l-4-4m0 0L8 6m4-4v12" />
+            </svg>
+          </button>
           <button
             onClick={toggleLike}
             aria-label={liked ? "LIKEを取り消す" : "LIKE"}
@@ -477,14 +490,16 @@ function InfoCard({ icon, label, value, highlight }: {
   highlight?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl p-3 md:p-4 ${highlight ? "bg-emerald-50/80 border border-emerald-100" : "bg-gray-50/80 border border-gray-100"}`}>
-      <div className="flex items-center gap-1.5 mb-1">
-        <svg className={`w-3 h-3 md:w-4 md:h-4 ${highlight ? "text-emerald-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {icon}
-        </svg>
-        <p className="text-[10px] md:text-[11px] text-gray-400 font-medium">{label}</p>
+    <div className={`rounded-2xl p-3 md:p-4 transition-all hover:shadow-sm ${highlight ? "bg-emerald-50/80 border border-emerald-100" : "bg-gray-50/80 border border-gray-100"}`}>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className={`w-5 h-5 md:w-6 md:h-6 rounded-lg flex items-center justify-center ${highlight ? "bg-emerald-100" : "bg-gray-100"}`}>
+          <svg className={`w-3 h-3 md:w-3.5 md:h-3.5 ${highlight ? "text-emerald-500" : "text-gray-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {icon}
+          </svg>
+        </div>
+        <p className="text-[10px] md:text-[11px] text-gray-400 font-bold">{label}</p>
       </div>
-      <p className={`text-xs md:text-sm font-bold leading-snug ${highlight ? "text-emerald-700" : "text-gray-800"}`}>{value}</p>
+      <p className={`text-[13px] md:text-sm font-bold leading-snug ${highlight ? "text-emerald-700" : "text-gray-800"}`}>{value}</p>
     </div>
   );
 }

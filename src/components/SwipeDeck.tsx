@@ -174,18 +174,58 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
   ]);
 
   if (currentIndex >= jobs.length) {
+    const likedCount = history.filter((h) => h.direction === "right").length;
     return (
       <div className="flex flex-col items-center justify-center h-full text-center px-8">
-        <Logo size={64} radius={18} className="mb-4 shadow-lg shadow-violet-200/60 ring-2 ring-white" />
+        {/* Confetti-like decorative dots */}
+        <div className="relative mb-6">
+          <div className="absolute -inset-8 pointer-events-none">
+            {[...Array(8)].map((_, i) => {
+              const angle = (i / 8) * Math.PI * 2;
+              const r = 44 + (i % 2) * 12;
+              return (
+                <span
+                  key={i}
+                  className="absolute w-2 h-2 rounded-full opacity-60"
+                  style={{
+                    left: `calc(50% + ${Math.cos(angle) * r}px - 4px)`,
+                    top: `calc(50% + ${Math.sin(angle) * r}px - 4px)`,
+                    background: ["#8b5cf6", "#ec4899", "#06b6d4", "#f59e0b", "#10b981"][i % 5],
+                  }}
+                />
+              );
+            })}
+          </div>
+          <Logo size={72} radius={20} className="shadow-xl shadow-violet-200/60 ring-4 ring-white" />
+        </div>
         <p className="text-[10px] tracking-[0.3em] font-black text-violet-500 mb-1">
-          SWIPLY
+          COMPLETE
         </p>
-        <h2 className="text-lg font-extrabold text-gray-900 mb-1">
+        <h2 className="text-xl font-black text-gray-900 mb-1">
           全ての求人をチェック済み！
         </h2>
-        <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-          気になる求人はLIKEリストから確認できます
+        <p className="text-[13px] text-gray-400 mb-2 leading-relaxed">
+          お疲れさまでした
         </p>
+
+        {/* Session stats */}
+        <div className="flex items-center gap-4 mb-6 px-4 py-2.5 rounded-2xl bg-gray-50 border border-gray-100">
+          <div className="text-center">
+            <p className="text-lg font-black text-gray-900 tabular-nums">{jobs.length}</p>
+            <p className="text-[10px] text-gray-400 font-bold">チェック</p>
+          </div>
+          <div className="w-px h-8 bg-gray-200" />
+          <div className="text-center">
+            <p className="text-lg font-black text-pink-500 tabular-nums">{likedCount}</p>
+            <p className="text-[10px] text-gray-400 font-bold">LIKE</p>
+          </div>
+          <div className="w-px h-8 bg-gray-200" />
+          <div className="text-center">
+            <p className="text-lg font-black text-violet-600 tabular-nums">{jobs.length > 0 ? Math.round((likedCount / jobs.length) * 100) : 0}%</p>
+            <p className="text-[10px] text-gray-400 font-bold">LIKE率</p>
+          </div>
+        </div>
+
         <div className="flex gap-3">
           <button
             onClick={() => {
@@ -193,7 +233,7 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
               setHistory([]);
               setCurrentIndex(0);
             }}
-            className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl font-bold text-sm active:scale-95 transition-transform"
+            className="px-5 py-2.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-xl font-bold text-sm active:scale-95 transition-transform shadow-lg shadow-violet-200/50"
           >
             もう一度見る
           </button>
@@ -202,9 +242,9 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
               haptic("tick");
               router.push("/likes");
             }}
-            className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-transform"
+            className="px-5 py-2.5 bg-white text-gray-700 rounded-xl font-bold text-sm active:scale-95 transition-transform border border-gray-200 shadow-sm"
           >
-            LIKEリスト
+            LIKEリスト →
           </button>
         </div>
       </div>
@@ -320,55 +360,67 @@ export default function SwipeDeck({ jobs }: SwipeDeckProps) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-center items-center gap-4 py-3 shrink-0">
-        <button
-          onClick={handleUndo}
-          disabled={!canUndo}
-          className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${
-            canUndo
-              ? "bg-white text-amber-500 border-gray-100/80 shadow-md shadow-gray-200/60 active:scale-90"
-              : "bg-gray-100 text-gray-300 border-transparent"
-          }`}
-          aria-label="1つ戻す"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 14L4 9m0 0l5-5M4 9h11a5 5 0 015 5v1" />
-          </svg>
-        </button>
+      <div className="flex justify-center items-center gap-3 md:gap-5 py-3 shrink-0">
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className={`w-11 h-11 rounded-full flex items-center justify-center border transition-all ${
+              canUndo
+                ? "bg-white text-amber-500 border-gray-100/80 shadow-md shadow-gray-200/60 active:scale-90 hover:shadow-lg"
+                : "bg-gray-100 text-gray-300 border-transparent"
+            }`}
+            aria-label="1つ戻す"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M9 14L4 9m0 0l5-5M4 9h11a5 5 0 015 5v1" />
+            </svg>
+          </button>
+          <span className="hidden md:block text-[9px] font-bold text-gray-400">戻す</span>
+        </div>
 
-        <button
-          onClick={handleSwipeLeft}
-          className="w-14 h-14 rounded-full bg-white shadow-lg shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 transition-all"
-          aria-label="スキップ"
-        >
-          <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={handleSwipeLeft}
+            className="w-14 h-14 rounded-full bg-white shadow-lg shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 hover:shadow-xl hover:border-red-100 transition-all group"
+            aria-label="スキップ"
+          >
+            <svg className="w-6 h-6 text-red-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <span className="hidden md:block text-[9px] font-bold text-gray-400">SKIP</span>
+        </div>
 
-        <button
-          onClick={handleSwipeUp}
-          className="w-11 h-11 rounded-full bg-white shadow-md shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 transition-all"
-          aria-label="詳細を見る"
-        >
-          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-          </svg>
-        </button>
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={handleSwipeUp}
+            className="w-11 h-11 rounded-full bg-white shadow-md shadow-gray-200/60 flex items-center justify-center border border-gray-100/80 active:scale-90 hover:shadow-lg hover:border-blue-100 transition-all group"
+            aria-label="詳細を見る"
+          >
+            <svg className="w-5 h-5 text-blue-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+            </svg>
+          </button>
+          <span className="hidden md:block text-[9px] font-bold text-gray-400">詳細</span>
+        </div>
 
-        <button
-          onClick={handleSwipeRight}
-          className={`relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all ${
-            remaining > 0
-              ? "bg-gradient-to-br from-emerald-400 to-green-500 shadow-emerald-200/60"
-              : "bg-gradient-to-br from-gray-300 to-gray-400 shadow-gray-200/60"
-          }`}
-          aria-label={remaining > 0 ? "LIKE" : "今日のLIKE残数なし"}
-        >
-          <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-        </button>
+        <div className="flex flex-col items-center gap-1">
+          <button
+            onClick={handleSwipeRight}
+            className={`relative w-14 h-14 rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all ${
+              remaining > 0
+                ? "bg-gradient-to-br from-emerald-400 to-green-500 shadow-emerald-200/60 hover:shadow-xl hover:shadow-emerald-300/60"
+                : "bg-gradient-to-br from-gray-300 to-gray-400 shadow-gray-200/60"
+            }`}
+            aria-label={remaining > 0 ? "LIKE" : "今日のLIKE残数なし"}
+          >
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </button>
+          <span className="hidden md:block text-[9px] font-bold text-gray-400">LIKE</span>
+        </div>
       </div>
 
       <DailyLimitModal

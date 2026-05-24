@@ -33,6 +33,46 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* ── Scroll-triggered fade-in ── */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.stagger > .fade-in-up:nth-child(1) { transition-delay: 0s; }
+.stagger > .fade-in-up:nth-child(2) { transition-delay: 0.08s; }
+.stagger > .fade-in-up:nth-child(3) { transition-delay: 0.16s; }
+.stagger > .fade-in-up:nth-child(4) { transition-delay: 0.24s; }
+.stagger > .fade-in-up:nth-child(5) { transition-delay: 0.32s; }
+.stagger > .fade-in-up:nth-child(6) { transition-delay: 0.40s; }
+
+/* ── Shimmer loading ── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.4) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
+}
+
+/* ── Pulse glow for CTA buttons ── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.3); }
+  50%      { box-shadow: 0 0 20px 6px rgba(139, 92, 246, 0.15); }
+}
+.pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
 /*
  * Print styles for /brand/?company=… (the parent-friendly handout
  * derived from each company's BrandPage). Applies to the wrapper class

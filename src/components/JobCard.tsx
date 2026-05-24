@@ -132,43 +132,52 @@ function JobCardImpl({ job, active = true }: JobCardProps) {
       )}
 
       {/* Content - positioned from bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 text-white">
-        <p className="text-[10px] font-bold tracking-wider text-amber-300 mb-0.5 uppercase leading-tight">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 text-white">
+        <p className="text-[10px] font-bold tracking-wider text-amber-300 mb-0.5 uppercase leading-tight drop-shadow-sm">
           {job.catchphrase}
         </p>
 
-        <h2 className="text-lg font-extrabold leading-tight">{job.title}</h2>
-        <p className="text-[11px] text-white/50 font-medium">{job.company}</p>
+        <h2 className="text-[19px] font-black leading-tight drop-shadow">{job.title}</h2>
+        <p className="text-[12px] text-white/60 font-medium">{job.company}</p>
 
-        <p className="text-sm font-bold text-emerald-400 mt-1.5">{job.salary}</p>
+        <div className="flex items-center gap-2 mt-2">
+          <span className="px-2.5 py-1 rounded-lg bg-emerald-500/90 backdrop-blur-sm text-[13px] font-black text-white shadow-sm">
+            {job.salary}
+          </span>
+          {job.instantInterview && (
+            <span className="px-2 py-1 rounded-lg bg-rose-500/90 backdrop-blur-sm text-[10px] font-bold text-white shadow-sm flex items-center gap-0.5">
+              🔥 即面接OK
+            </span>
+          )}
+        </div>
 
-        <div className="flex items-center gap-3 mt-1 text-[10px] text-white/50">
+        <div className="flex items-center gap-3 mt-2 text-[10px] text-white/60">
           <span className="flex items-center gap-1">
             <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             </svg>
             {job.location}
           </span>
+          <span>|</span>
           <span>{job.minDays}</span>
+          <span>|</span>
           <span>{job.workHours}</span>
         </div>
 
-        <div className="mt-1.5 flex items-center gap-1">
-          <svg className="w-2.5 h-2.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="text-[10px] font-medium text-sky-300">{job.experience}</span>
-        </div>
-
-        <div className="flex flex-wrap gap-1 mt-1.5">
-          {job.tags.map((tag) => (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {job.tags.slice(0, 4).map((tag) => (
             <span
               key={tag}
-              className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-medium text-white/70"
+              className="px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-sm text-[10px] font-semibold text-white/80 border border-white/10"
             >
               {tag}
             </span>
           ))}
+          {job.tags.length > 4 && (
+            <span className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] font-semibold text-white/50">
+              +{job.tags.length - 4}
+            </span>
+          )}
         </div>
       </div>
     </div>

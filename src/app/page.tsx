@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import JobListCard from "@/components/JobListCard";
 import Logo from "@/components/Logo";
@@ -18,6 +18,64 @@ import type { Job } from "@/types/job";
 import type { UserProfile } from "@/types/profile";
 
 const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
+
+// ── Scroll-triggered IntersectionObserver hook ──
+function useScrollReveal<T extends HTMLElement = HTMLDivElement>() {
+  const ref = useRef<T>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); io.disconnect(); } },
+      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return { ref, visible };
+}
+
+// ── Animated counter hook ──
+function useAnimatedCounter(target: number, duration = 1800, active = true) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = performance.now();
+    let raf: number;
+    function tick(now: number) {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(Math.round(eased * target));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, active]);
+  return value;
+}
+
+// ── FadeInSection wrapper ──
+function FadeInSection({ children, delay = 0, className = "" }: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const { ref, visible } = useScrollReveal();
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(28px)",
+        transition: `opacity 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function Home() {
   const [recommended, setRecommended] = useState<Job[]>([]);
@@ -100,7 +158,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-2.5 md:gap-3 md:max-w-md">
                 <Link
                   href="/swipe"
-                  className="flex-1 py-3.5 md:py-4 px-6 bg-white text-gray-900 text-center font-black rounded-2xl text-sm md:text-base shadow-xl shadow-black/30 active:scale-[0.97] hover:scale-[1.02] transition-transform"
+                  className="flex-1 py-3.5 md:py-4 px-6 bg-white text-gray-900 text-center font-black rounded-2xl text-sm md:text-base shadow-xl shadow-black/30 active:scale-[0.97] hover:scale-[1.02] transition-transform pulse-glow"
                 >
                   スワイプをはじめる →
                 </Link>
@@ -129,33 +187,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Quick stats strip ── */}
-      <section className="relative border-y border-gray-900/10 bg-white">
-        <div className="max-w-lg md:max-w-5xl mx-auto px-5 md:px-8 py-5 md:py-8 flex items-center justify-between">
-          <div>
-            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">12,347</p>
-            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">いま掲載中の求人</p>
-          </div>
-          <div className="h-10 md:h-14 w-px bg-gray-200" />
-          <div>
-            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">98,421</p>
-            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">登録者</p>
-          </div>
-          <div className="h-10 md:h-14 w-px bg-gray-200" />
-          <div>
-            <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">
-              87.3<span className="text-sm md:text-xl">%</span>
-            </p>
-            <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">満足度</p>
-          </div>
-        </div>
-      </section>
+      {/* ── Quick stats strip — animated counters ── */}
+      <AnimatedStatsStrip />
 
-      {/* ── NEW: Feature showcase ──
-          Walks the user through what SWIPLY can actually do, end-to-end.
-          Replaces the older "feature card" pattern with a magazine-style
-          numbered list that matches the LP's existing tone. */}
-      <FeatureShowcase />
+      {/* ── Feature showcase ── */}
+      <FadeInSection>
+        <FeatureShowcase />
+      </FadeInSection>
 
       {/* ── Recommended jobs ── */}
       {recommended.length > 0 && (
@@ -189,6 +227,7 @@ export default function Home() {
       )}
 
       {/* ── Founder's note ── */}
+      <FadeInSection>
       <section className="px-6 pt-10 md:pt-16 pb-6 max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto">
         <p className="text-[11px] md:text-xs text-gray-400 mb-3">— はじめに、少しだけ。</p>
         <p className="text-[15px] md:text-[17px] text-gray-800 leading-[1.9] font-medium">
@@ -213,6 +252,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </FadeInSection>
 
       {/* ── Divider with ornament ── */}
       <div className="flex items-center gap-3 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto px-8 py-4">
@@ -222,6 +262,7 @@ export default function Home() {
       </div>
 
       {/* ── Why swipe (text-heavy, no emoji cards) ── */}
+      <FadeInSection>
       <section className="px-6 py-8 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto">
         <h2 className="text-[22px] md:text-[40px] lg:text-[48px] font-black text-gray-900 leading-tight mb-6 md:mb-10">
           スワイプ式の、<br />
@@ -269,6 +310,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </FadeInSection>
 
       {/* ── Dark product photo section — extended to 4 steps ── */}
       <section className="bg-gray-950 text-white my-6">
@@ -340,6 +382,7 @@ export default function Home() {
       </section>
 
       {/* ── Voices: magazine-style, asymmetric ── */}
+      <FadeInSection>
       <section className="px-6 py-10 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto">
         <p className="text-[11px] md:text-xs text-gray-400 mb-1">使ってくれた人たち</p>
         <h2 className="text-[22px] md:text-[40px] lg:text-[48px] font-black text-gray-900 mb-6 md:mb-10">
@@ -388,6 +431,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </FadeInSection>
 
       {/* ── FAQ-ish small text section ── */}
       <section className="px-6 py-8 md:py-14 max-w-lg md:max-w-5xl lg:max-w-6xl mx-auto bg-white border-y border-gray-900/5">
@@ -414,10 +458,13 @@ export default function Home() {
         </dl>
       </section>
 
-      {/* ── NEW: For Business banner — visually distinct, can't be missed ── */}
-      <BusinessBanner />
+      {/* ── For Business banner — visually distinct, can't be missed ── */}
+      <FadeInSection>
+        <BusinessBanner />
+      </FadeInSection>
 
       {/* ── Final CTA: quiet, not shouty ── */}
+      <FadeInSection>
       <section className="px-6 py-12 md:py-20 max-w-lg md:max-w-3xl lg:max-w-4xl mx-auto text-center">
         <p className="text-[11px] md:text-xs text-gray-400 mb-3">よかったら、はじめてみてください。</p>
         <h2 className="text-[22px] md:text-[44px] lg:text-[52px] font-black text-gray-900 leading-tight mb-6 md:mb-8">
@@ -448,6 +495,7 @@ export default function Home() {
           </p>
         </div>
       </section>
+      </FadeInSection>
 
       <BottomNav />
 
@@ -760,6 +808,39 @@ function BizValueProp({ title, body }: { title: string; body: string }) {
       <p className="text-[12px] md:text-[13px] font-extrabold text-white mb-0.5">{title}</p>
       <p className="text-[10px] md:text-[11px] text-white/60 leading-relaxed">{body}</p>
     </li>
+  );
+}
+
+function AnimatedStatsStrip() {
+  const { ref, visible } = useScrollReveal();
+  const jobs = useAnimatedCounter(12347, 2000, visible);
+  const users = useAnimatedCounter(98421, 2200, visible);
+  const satisfaction = useAnimatedCounter(873, 2400, visible);
+  return (
+    <section ref={ref} className="relative border-y border-gray-900/10 bg-white">
+      <div className="max-w-lg md:max-w-5xl mx-auto px-5 md:px-8 py-5 md:py-8 flex items-center justify-between">
+        <div>
+          <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">
+            {visible ? jobs.toLocaleString() : "0"}
+          </p>
+          <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">いま掲載中の求人</p>
+        </div>
+        <div className="h-10 md:h-14 w-px bg-gray-200" />
+        <div>
+          <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">
+            {visible ? users.toLocaleString() : "0"}
+          </p>
+          <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">登録者</p>
+        </div>
+        <div className="h-10 md:h-14 w-px bg-gray-200" />
+        <div>
+          <p className="text-[22px] md:text-[36px] font-black text-gray-900 leading-none tabular-nums">
+            {visible ? `${(satisfaction / 10).toFixed(1)}` : "0.0"}<span className="text-sm md:text-xl">%</span>
+          </p>
+          <p className="text-[10px] md:text-xs text-gray-500 mt-1 md:mt-2">満足度</p>
+        </div>
+      </div>
+    </section>
   );
 }
 
