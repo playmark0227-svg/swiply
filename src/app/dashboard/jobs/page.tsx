@@ -26,6 +26,9 @@ export default function DashboardJobsPage() {
   return (
     <DashboardShell>
       <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-7xl mx-auto">
+        {/* Demo banner */}
+        <DemoBanner />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
@@ -77,7 +80,7 @@ function JobRow({ job }: { job: CompanyJob }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4 lg:p-5 hover:shadow-md transition">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 lg:p-5 hover:shadow-md shadow-sm shadow-gray-100/50 transition-all duration-200">
       <div className="flex gap-4">
         {/* Thumbnail */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -162,6 +165,28 @@ function Stat({ icon, label, value }: { icon: string; label: string; value: stri
       <span aria-hidden className="text-[10px]">{icon}</span>
       <span className="font-bold text-gray-700">{value}</span>
       <span className="hidden sm:inline text-gray-400">{label}</span>
+    </div>
+  );
+}
+
+function DemoBanner() {
+  return (
+    <div className="mb-5 relative overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/30 -translate-y-1/2 translate-x-1/4" />
+      </div>
+      <div className="flex items-center gap-2.5 relative">
+        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </div>
+        <p className="text-[12px] font-bold text-white">デモモードで体験中 — 実際の操作は反映されません</p>
+      </div>
+      <a href="/business#contact" className="relative shrink-0 px-4 py-1.5 rounded-lg bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition">
+        本番を始める →
+      </a>
     </div>
   );
 }

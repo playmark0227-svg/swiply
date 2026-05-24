@@ -406,5 +406,97 @@ export function getKPIs() {
     hired: applicants.filter((a) => a.stage === "hired").length,
     conversionRate: 3.2, // %
     avgResponseTime: "2.4時間",
+    // Trend data (% change vs last week)
+    viewsTrend: +12.5,
+    likesTrend: +8.3,
+    matchesTrend: +15.0,
+    hiredTrend: 0,
+    applicationsTrend: +5.7,
+    responseTimeTrend: -18.2, // negative is improvement
   };
+}
+
+// ─── Notifications ──────────────────────────────────────────────────
+
+export interface DashboardNotification {
+  id: string;
+  type: "match" | "message" | "application" | "interview" | "system";
+  title: string;
+  body: string;
+  time: string;
+  read: boolean;
+  avatar?: string;
+}
+
+export function getNotifications(): DashboardNotification[] {
+  return [
+    {
+      id: "n-1",
+      type: "match",
+      title: "新しいマッチ",
+      body: "山田 翔太 さんが「美容師 / スタイリスト」にLIKEしました",
+      time: ISO(0.1),
+      read: false,
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop",
+    },
+    {
+      id: "n-2",
+      type: "message",
+      title: "新しいメッセージ",
+      body: "田中 美咲 さんからメッセージが届きました",
+      time: ISO(0.2),
+      read: false,
+      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop",
+    },
+    {
+      id: "n-3",
+      type: "interview",
+      title: "面接リマインダー",
+      body: "田中 美咲 さんとのビデオ面接が明後日14:00に予定されています",
+      time: ISO(0.5),
+      read: false,
+    },
+    {
+      id: "n-4",
+      type: "application",
+      title: "新しい応募",
+      body: "渡辺 さくら さんが「レセプション / 受付」に応募しました",
+      time: ISO(0.8),
+      read: true,
+      avatar: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=100&h=100&fit=crop",
+    },
+    {
+      id: "n-5",
+      type: "system",
+      title: "SWIPLY からのお知らせ",
+      body: "求人「美容師 / スタイリスト」の閲覧数が1,000回を突破しました！",
+      time: ISO(1),
+      read: true,
+    },
+  ];
+}
+
+// ─── Activity timeline ──────────────────────────────────────────────
+
+export interface ActivityEvent {
+  id: string;
+  type: "like" | "match" | "message" | "interview" | "offer" | "hire" | "view_milestone";
+  description: string;
+  time: string;
+  applicantName?: string;
+  applicantPhoto?: string;
+  jobTitle?: string;
+}
+
+export function getRecentActivity(): ActivityEvent[] {
+  return [
+    { id: "ae-1", type: "like",     description: "山田 翔太 さんがLIKEしました",                applicantName: "山田 翔太",  applicantPhoto: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop", jobTitle: "美容師 / スタイリスト",  time: ISO(0.1) },
+    { id: "ae-2", type: "message",  description: "田中 美咲 さんからメッセージ",               applicantName: "田中 美咲",  applicantPhoto: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop", jobTitle: "美容師 / スタイリスト",  time: ISO(0.2) },
+    { id: "ae-3", type: "offer",    description: "高橋 結衣 さんが内定を承諾",                applicantName: "高橋 結衣",  applicantPhoto: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&h=100&fit=crop", jobTitle: "レセプション / 受付",    time: ISO(0.5) },
+    { id: "ae-4", type: "interview", description: "田中 美咲 さんとの面接が確定",              applicantName: "田中 美咲",  applicantPhoto: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop", jobTitle: "美容師 / スタイリスト",  time: ISO(1) },
+    { id: "ae-5", type: "match",    description: "佐藤 健太 さんとマッチしました",             applicantName: "佐藤 健太",  applicantPhoto: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop", jobTitle: "アシスタント",           time: ISO(1.5) },
+    { id: "ae-6", type: "view_milestone", description: "「美容師 / スタイリスト」が1,000閲覧を達成", jobTitle: "美容師 / スタイリスト", time: ISO(2) },
+    { id: "ae-7", type: "hire",     description: "中村 大輝 さんの採用が決定しました",          applicantName: "中村 大輝",  applicantPhoto: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop", jobTitle: "美容師 / スタイリスト",  time: ISO(3) },
+    { id: "ae-8", type: "like",     description: "渡辺 さくら さんがLIKEしました",             applicantName: "渡辺 さくら", applicantPhoto: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=100&h=100&fit=crop", jobTitle: "レセプション / 受付",    time: ISO(4) },
+  ];
 }

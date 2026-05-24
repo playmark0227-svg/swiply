@@ -51,6 +51,25 @@ export default function DashboardAnalyticsPage() {
   return (
     <DashboardShell>
       <div className="px-4 lg:px-8 py-6 lg:py-8 max-w-7xl mx-auto space-y-6">
+        {/* Demo banner */}
+        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/30 -translate-y-1/2 translate-x-1/4" />
+          </div>
+          <div className="flex items-center gap-2.5 relative">
+            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </div>
+            <p className="text-[12px] font-bold text-white">デモモードで体験中 — サンプルデータを表示しています</p>
+          </div>
+          <a href="/business#contact" className="relative shrink-0 px-4 py-1.5 rounded-lg bg-white/20 text-white text-[11px] font-bold hover:bg-white/30 transition">
+            本番を始める →
+          </a>
+        </div>
+
         <div>
           <h1 className="text-xl lg:text-2xl font-black text-gray-900">分析</h1>
           <p className="text-[13px] text-gray-500 mt-0.5">採用パフォーマンスの概要</p>
@@ -67,7 +86,7 @@ export default function DashboardAnalyticsPage() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Funnel */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
             <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">採用ファネル</h2>
             <div className="space-y-3">
               {funnel.map((f) => (
@@ -87,7 +106,7 @@ export default function DashboardAnalyticsPage() {
           </div>
 
           {/* Source breakdown */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
             <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">流入元</h2>
             <div className="space-y-3">
               {sources.map((s) => (
@@ -110,7 +129,7 @@ export default function DashboardAnalyticsPage() {
 
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Weekly trend */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
             <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">週間トレンド</h2>
             <div className="flex items-end gap-2 h-40">
               {weekly.map((day) => (
@@ -134,7 +153,7 @@ export default function DashboardAnalyticsPage() {
           </div>
 
           {/* Stage distribution */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6">
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
             <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">候補者ステージ分布</h2>
             <div className="space-y-3">
               {stageDistrib.map((s) => (
@@ -155,7 +174,7 @@ export default function DashboardAnalyticsPage() {
         </div>
 
         {/* Per-job performance */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
           <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">求人別パフォーマンス</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -203,9 +222,9 @@ export default function DashboardAnalyticsPage() {
 
 function SummaryCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-4">
+    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm shadow-gray-100/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
       <p className="text-[10px] font-bold text-gray-400 mb-1">{label}</p>
-      <p className="text-[20px] font-black text-gray-900">{value}</p>
+      <p className="text-[20px] font-black text-gray-900 tabular-nums">{value}</p>
     </div>
   );
 }
