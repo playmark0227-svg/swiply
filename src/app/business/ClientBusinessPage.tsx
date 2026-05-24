@@ -1,11 +1,70 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "@/components/Logo";
 import { submitLead } from "@/lib/services/businessLeads";
 import { getFoundingRemaining } from "@/lib/services/foundingCounter";
+
+// ─── Scroll-triggered fade-in ─────────────────────────────────────
+function useInView(threshold = 0.15): [RefObject<HTMLDivElement | null>, boolean] {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
+
+function FadeInSection({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
+  const [ref, visible] = useInView(0.1);
+  return (
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ─── Animated counter hook ────────────────────────────────────────
+function useAnimatedCounter(target: number, duration = 1400, active = true): number {
+  const [value, setValue] = useState(0);
+  const prevRef = useRef(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = prevRef.current;
+    const diff = target - start;
+    if (diff === 0) { setValue(target); return; }
+    const t0 = performance.now();
+    let raf: number;
+    function tick(now: number) {
+      const p = Math.min((now - t0) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const cur = Math.round(start + diff * eased);
+      setValue(cur);
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else prevRef.current = target;
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration, active]);
+  return value;
+}
 
 // =================================================================
 // Page entry — composes all sections.
@@ -71,18 +130,26 @@ function StickyBottomCTA({ remaining }: { remaining: number }) {
 // Social proof bar — logos / numbers strip below hero
 // =================================================================
 function SocialProofBar() {
+  const [ref, visible] = useInView(0.3);
+  const n30 = useAnimatedCounter(30, 1200, visible);
+  const n55 = useAnimatedCounter(55, 1400, visible);
+  const n2 = useAnimatedCounter(2, 800, visible);
+  const n0 = useAnimatedCounter(0, 400, visible);
+
+  const stats = [
+    { value: `${n30}秒`, label: "動画で職場のリアルが伝わる" },
+    { value: `${n55}%+`, label: "AIスカウト開封率" },
+    { value: `${n2}x`, label: "従来比マッチ率" },
+    { value: `${n0}円`, label: "初期費用・動画制作費" },
+  ];
+
   return (
-    <section className="bg-white border-b border-gray-100 py-6 md:py-8">
+    <section ref={ref} className="bg-white border-b border-gray-100 py-6 md:py-8">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-          {[
-            { value: "30秒", label: "動画で職場のリアルが伝わる" },
-            { value: "55%+", label: "AIスカウト開封率" },
-            { value: "2x", label: "従来比マッチ率" },
-            { value: "0円", label: "初期費用・動画制作費" },
-          ].map((s) => (
+          {stats.map((s) => (
             <div key={s.label} className="text-center">
-              <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+              <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent tabular-nums">
                 {s.value}
               </p>
               <p className="text-[11px] md:text-[12px] text-gray-500 font-bold mt-1">{s.label}</p>
@@ -143,18 +210,20 @@ function CaseStudySection() {
   return (
     <section className="px-5 md:px-8 py-20 md:py-28 bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
-          ─ 導入企業の声
-        </p>
-        <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-4">
-          数字で見る、
-          <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
-            SWIPLYの効果。
-          </span>
-        </h2>
-        <p className="text-[13px] text-gray-500 text-center mb-12 md:mb-16">
-          ファウンディングメンバーとして先行導入いただいた企業様の実績です。
-        </p>
+        <FadeInSection>
+          <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
+            ─ 導入企業の声
+          </p>
+          <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-4">
+            数字で見る、
+            <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
+              SWIPLYの効果。
+            </span>
+          </h2>
+          <p className="text-[13px] text-gray-500 text-center mb-12 md:mb-16">
+            ファウンディングメンバーとして先行導入いただいた企業様の実績です。
+          </p>
+        </FadeInSection>
 
         <div className="grid md:grid-cols-3 gap-5 md:gap-6">
           {cases.map((c) => (
@@ -293,20 +362,22 @@ function AIFacilitatorSection() {
       <div className="absolute bottom-0 -left-20 w-[400px] h-[400px] rounded-full bg-cyan-300/30 blur-[120px] pointer-events-none" />
 
       <div className="relative max-w-7xl mx-auto">
-        <p className="text-[11px] tracking-[0.3em] text-fuchsia-500 font-bold mb-3 text-center">
-          ─ AI 機能（独自開発）
-        </p>
-        <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-3">
-          採用に効く AI を、
-          <br className="md:hidden" />
-          <span className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
-            標準で2つ。
-          </span>
-        </h2>
-        <p className="text-center text-[13px] md:text-[14px] text-gray-600 max-w-2xl mx-auto mb-12 md:mb-16 leading-relaxed">
-          SWIPLY は求人ビッグデータで学習した独自 AI を内蔵。
-          一般的な ChatGPT 連携サービスと違い、面接の場でリアルタイムに動きます。
-        </p>
+        <FadeInSection>
+          <p className="text-[11px] tracking-[0.3em] text-fuchsia-500 font-bold mb-3 text-center">
+            ─ AI 機能（独自開発）
+          </p>
+          <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-3">
+            採用に効く AI を、
+            <br className="md:hidden" />
+            <span className="bg-gradient-to-r from-fuchsia-500 to-cyan-500 bg-clip-text text-transparent">
+              標準で2つ。
+            </span>
+          </h2>
+          <p className="text-center text-[13px] md:text-[14px] text-gray-600 max-w-2xl mx-auto mb-12 md:mb-16 leading-relaxed">
+            SWIPLY は求人ビッグデータで学習した独自 AI を内蔵。
+            一般的な ChatGPT 連携サービスと違い、面接の場でリアルタイムに動きます。
+          </p>
+        </FadeInSection>
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-8">
           {/* AI 1 — Facilitator */}
@@ -694,24 +765,28 @@ function ProblemSection() {
   return (
     <section className="px-5 md:px-8 py-20 md:py-28 bg-gray-50">
       <div className="max-w-3xl mx-auto">
-        <p className="text-[11px] tracking-[0.3em] text-gray-400 font-bold mb-6">
-          ─ こんな悩み、ありませんか?
-        </p>
+        <FadeInSection>
+          <p className="text-[11px] tracking-[0.3em] text-gray-400 font-bold mb-6">
+            ─ こんな悩み、ありませんか?
+          </p>
+        </FadeInSection>
         <ul className="space-y-3 text-[18px] md:text-[22px] font-extrabold text-gray-900 leading-snug mb-10">
-          <li>求人広告に出してるのに、応募が来ない。</li>
-          <li>来ても、面接でミスマッチ。</li>
-          <li>採用しても、3ヶ月で辞めてしまう。</li>
+          <FadeInSection delay={0.1}><li>求人広告に出してるのに、応募が来ない。</li></FadeInSection>
+          <FadeInSection delay={0.2}><li>来ても、面接でミスマッチ。</li></FadeInSection>
+          <FadeInSection delay={0.3}><li>採用しても、3ヶ月で辞めてしまう。</li></FadeInSection>
         </ul>
 
-        <p className="text-[15px] md:text-[17px] text-gray-700 leading-[1.9] font-medium">
-          そのお店の<span className="bg-yellow-100 px-1">「本当の魅力」</span>が、伝わっていないだけかもしれません。
-        </p>
-        <p className="text-[14px] md:text-[15px] text-gray-500 leading-[1.9] mt-5">
-          文字や写真だけで、職場の空気感は伝わらない。
-          <br />
-          求職者が本当に知りたいのは、
-          <span className="font-bold text-gray-700">「数字」より「雰囲気」</span>のはず。
-        </p>
+        <FadeInSection delay={0.15}>
+          <p className="text-[15px] md:text-[17px] text-gray-700 leading-[1.9] font-medium">
+            そのお店の<span className="bg-yellow-100 px-1">「本当の魅力」</span>が、伝わっていないだけかもしれません。
+          </p>
+          <p className="text-[14px] md:text-[15px] text-gray-500 leading-[1.9] mt-5">
+            文字や写真だけで、職場の空気感は伝わらない。
+            <br />
+            求職者が本当に知りたいのは、
+            <span className="font-bold text-gray-700">「数字」より「雰囲気」</span>のはず。
+          </p>
+        </FadeInSection>
       </div>
     </section>
   );
@@ -769,16 +844,18 @@ function SolutionSection() {
   return (
     <section id="solution" className="px-5 md:px-8 py-20 md:py-28 bg-white">
       <div className="max-w-7xl mx-auto">
-        <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
-          ─ SWIPLYが、変える4つのこと
-        </p>
-        <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-12 md:mb-16">
-          採用は、もう数字じゃない。
-          <br />
-          <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
-            体験で、決まる。
-          </span>
-        </h2>
+        <FadeInSection>
+          <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
+            ─ SWIPLYが、変える4つのこと
+          </p>
+          <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-12 md:mb-16">
+            採用は、もう数字じゃない。
+            <br />
+            <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
+              体験で、決まる。
+            </span>
+          </h2>
+        </FadeInSection>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-6">
           {items.map((it) => (
@@ -1199,7 +1276,7 @@ function FoundingBenefitsSection({ remaining }: { remaining: number }) {
       </div>
 
       <div className="relative max-w-6xl mx-auto">
-        <div className="text-center mb-12 md:mb-16">
+        <FadeInSection className="text-center mb-12 md:mb-16">
           <p className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[11px] font-bold tracking-wider mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             100社限定 / 残り {remaining}社
@@ -1216,7 +1293,7 @@ function FoundingBenefitsSection({ remaining }: { remaining: number }) {
             <br />
             SWIPLYと一緒に、新しい採用のかたちを作りませんか?
           </p>
-        </div>
+        </FadeInSection>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 mb-12">
           {perks.map((p) => (
