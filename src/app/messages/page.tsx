@@ -97,7 +97,7 @@ export default function MessagesPage() {
   );
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-6xl mx-auto w-full px-0 md:px-6 pt-0 md:pt-6 pb-16 md:pb-12">
         <div className="hidden md:block px-2 mb-4">

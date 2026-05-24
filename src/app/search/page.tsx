@@ -49,10 +49,10 @@ function SearchPageInner() {
   const visible = useMemo(() => applyFilters(jobs, filters), [jobs, filters]);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full px-4 md:px-6 pt-4 md:pt-8 pb-20 md:pb-12">
-        <h1 className="text-lg md:text-2xl font-extrabold text-gray-900 mb-3 md:mb-4">
+        <h1 className="text-xl md:text-2xl font-black text-gray-900 mb-3 md:mb-4">
           すべての求人を検索
         </h1>
 

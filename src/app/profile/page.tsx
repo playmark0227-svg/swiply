@@ -105,10 +105,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50/50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-6xl mx-auto w-full px-4 md:px-8 pt-5 md:pt-10 pb-32 md:pb-28">
-        <h1 className="text-lg md:text-3xl font-extrabold text-gray-900 mb-4 md:mb-6">マイページ</h1>
+        <h1 className="text-xl md:text-3xl font-black text-gray-900 mb-4 md:mb-6">マイページ</h1>
 
         <div className="md:grid md:grid-cols-3 md:gap-8">
         {/* Left column on desktop = sticky summary; on mobile = first */}

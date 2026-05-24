@@ -39,11 +39,11 @@ export default function ApplicationsPage() {
   const archived = apps.filter((a) => a.status === "withdrawn" || a.status === "rejected");
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-5xl mx-auto w-full px-4 md:px-8 pt-4 md:pt-10 pb-20 md:pb-16">
         <div className="mb-4 md:mb-6">
-          <h1 className="text-lg md:text-3xl font-extrabold text-gray-900">応募管理</h1>
+          <h1 className="text-xl md:text-3xl font-black text-gray-900">応募管理</h1>
           {loaded && apps.length > 0 && (
             <p className="text-[11px] md:text-sm text-gray-400 mt-0.5">
               全{apps.length}件 ／ 進行中 {active.length}件

@@ -34,12 +34,12 @@ export default function CareerPage() {
   const visible = useMemo(() => applyFilters(jobs, filters), [jobs, filters]);
 
   return (
-    <div className="flex flex-col min-h-dvh bg-gray-50">
+    <div className="flex flex-col min-h-dvh bg-[#fbf8f3]">
       <Header />
       <main className="flex-1 max-w-lg md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full px-4 md:px-6 pt-4 md:pt-8 pb-20 md:pb-12">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <div>
-            <h1 className="text-lg md:text-2xl font-extrabold text-gray-900">正社員求人</h1>
+            <h1 className="text-xl md:text-2xl font-black text-gray-900">正社員求人</h1>
             <p className="text-[11px] md:text-xs text-gray-400 mt-0.5">
               {loaded ? `${jobs.length}件中 ${visible.length}件表示` : "読み込み中…"}
             </p>
