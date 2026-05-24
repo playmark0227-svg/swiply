@@ -132,19 +132,25 @@ export default function DashboardAnalyticsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-5 lg:p-6 shadow-sm shadow-gray-100/50">
             <h2 className="text-[15px] font-extrabold text-gray-900 mb-5">週間トレンド</h2>
             <div className="flex items-end gap-2 h-40">
-              {weekly.map((day) => (
-                <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
-                  <div className="w-full flex flex-col gap-0.5" style={{ height: 120 }}>
-                    <div className="flex-1 flex flex-col justify-end">
-                      <div
-                        className="bg-blue-200 rounded-t"
-                        style={{ height: `${(day.views / 200) * 100}%`, minHeight: 4 }}
-                      />
+              {weekly.map((day) => {
+                const max = Math.max(...weekly.map((d) => d.views));
+                return (
+                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1 group">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity mb-0.5 text-[9px] font-bold text-gray-600 tabular-nums">
+                      {day.views}
                     </div>
+                    <div className="w-full flex flex-col gap-0.5" style={{ height: 120 }}>
+                      <div className="flex-1 flex flex-col justify-end">
+                        <div
+                          className="bg-gradient-to-t from-blue-500 to-blue-300 rounded-t-lg group-hover:from-blue-600 group-hover:to-blue-400 transition-colors shadow-sm"
+                          style={{ height: `${(day.views / max) * 100}%`, minHeight: 4 }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-[9px] text-gray-400 font-bold">{day.date}</span>
                   </div>
-                  <span className="text-[9px] text-gray-400 font-bold">{day.date}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-50 text-[10px] text-gray-400">
               <span>最大 {Math.max(...weekly.map((d) => d.views))} 閲覧/日</span>

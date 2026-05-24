@@ -171,10 +171,16 @@ export default function DashboardApplicantsPage() {
                     </div>
                     <div className="space-y-2">
                       {stageApps.map((a) => (
-                        <div key={a.id} className="bg-white rounded-xl border border-gray-100 p-3 hover:shadow-sm transition">
+                        <button
+                          key={a.id}
+                          onClick={() => setSelectedId(a.id)}
+                          className={`w-full text-left bg-white rounded-xl border p-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
+                            selectedId === a.id ? "border-blue-300 ring-2 ring-blue-100" : "border-gray-100"
+                          }`}
+                        >
                           <div className="flex items-center gap-2.5 mb-2">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={a.photo} alt={a.name} className="w-9 h-9 rounded-lg object-cover" />
+                            <img src={a.photo} alt={a.name} className="w-9 h-9 rounded-xl object-cover shadow-sm" />
                             <div className="min-w-0 flex-1">
                               <p className="text-[12px] font-bold text-gray-900 truncate">{a.name}</p>
                               <p className="text-[10px] text-gray-400 truncate">{a.age}歳</p>
@@ -184,12 +190,12 @@ export default function DashboardApplicantsPage() {
                           <p className="text-[10px] text-gray-500 truncate mb-2">{a.jobTitle}</p>
                           <div className="flex flex-wrap gap-1">
                             {a.skills.slice(0, 3).map((s) => (
-                              <span key={s} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-50 text-gray-500">
+                              <span key={s} className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-gray-50 text-gray-500 border border-gray-100">
                                 {s}
                               </span>
                             ))}
                           </div>
-                        </div>
+                        </button>
                       ))}
                       {stageApps.length === 0 && (
                         <div className="border-2 border-dashed border-gray-100 rounded-xl p-4 text-center text-[11px] text-gray-300">
@@ -303,9 +309,18 @@ function ApplicantDetail({ applicant }: { applicant: Applicant }) {
       </div>
 
       {/* Match score */}
-      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-3 flex items-center justify-between">
-        <span className="text-[11px] font-bold text-blue-700">AI マッチスコア</span>
-        <span className="text-[20px] font-black text-blue-600">{applicant.matchRate}%</span>
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[11px] font-bold text-blue-700">AI マッチスコア</span>
+          <span className="text-[22px] font-black text-blue-600 tabular-nums">{applicant.matchRate}%</span>
+        </div>
+        {/* Score bar */}
+        <div className="w-full h-2 bg-blue-100 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-700"
+            style={{ width: `${applicant.matchRate}%` }}
+          />
+        </div>
       </div>
 
       {/* Stage */}
