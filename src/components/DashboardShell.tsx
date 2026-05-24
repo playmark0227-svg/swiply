@@ -102,25 +102,38 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           })}
         </nav>
 
-        <div className="px-4 py-4 border-t border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-[13px] font-black">
+        <div className="px-3 py-3 border-t border-white/10 space-y-2">
+          {/* Founding CTA */}
+          <Link
+            href="/business#contact"
+            className="block w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-amber-400/20 to-amber-300/10 border border-amber-400/30 text-center text-[11px] font-bold text-amber-300 hover:bg-amber-400/30 transition"
+          >
+            FOUNDING 申込はこちら →
+          </Link>
+
+          <div className="flex items-center gap-3 px-1 pt-1">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white text-[12px] font-black shrink-0">
               B
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[12px] font-bold text-white truncate">Hair Salon BLOOM</p>
-              <p className="text-[10px] text-white/40 truncate">FOUNDING MEMBER</p>
+              <p className="text-[11px] font-bold text-white truncate">Hair Salon BLOOM</p>
+              <p className="text-[9px] text-white/40 truncate">DEMO MODE</p>
             </div>
           </div>
-          <Link
-            href="/"
-            className="mt-3 flex items-center gap-2 text-[11px] text-white/40 hover:text-white/70 transition"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            求職者向けサイトへ
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/business"
+              className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/40 hover:text-white/70 py-1 transition"
+            >
+              LP
+            </Link>
+            <Link
+              href="/"
+              className="flex-1 flex items-center justify-center gap-1 text-[10px] text-white/40 hover:text-white/70 py-1 transition"
+            >
+              B2C
+            </Link>
+          </div>
         </div>
       </aside>
 

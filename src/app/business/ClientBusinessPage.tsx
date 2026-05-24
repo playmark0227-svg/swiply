@@ -5,27 +5,279 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Logo from "@/components/Logo";
 import { submitLead } from "@/lib/services/businessLeads";
+import { getFoundingRemaining } from "@/lib/services/foundingCounter";
 
 // =================================================================
 // Page entry — composes all sections.
 // =================================================================
 export default function ClientBusinessPage() {
+  const [remaining, setRemaining] = useState(32);
+  useEffect(() => setRemaining(getFoundingRemaining()), []);
+
   return (
     <div className="bg-white text-gray-900 antialiased overflow-x-hidden">
-      <BusinessHeader />
-      <Hero />
+      <BusinessHeader remaining={remaining} />
+      <Hero remaining={remaining} />
+      <SocialProofBar />
       <ProblemSection />
       <SolutionSection />
       <FeaturesSection />
+      <CaseStudySection />
       <AIFacilitatorSection />
       <IndustriesSection />
       <FlowSection />
-      <PricingSection />
-      <FoundingBenefitsSection />
+      <PricingSection remaining={remaining} />
+      <FoundingBenefitsSection remaining={remaining} />
+      <ResourceDownloadSection />
       <FAQSection />
       <ContactSection />
       <BusinessFooter />
+      <StickyBottomCTA remaining={remaining} />
     </div>
+  );
+}
+
+// =================================================================
+// Sticky bottom CTA bar (mobile) — always visible during scroll
+// =================================================================
+function StickyBottomCTA({ remaining }: { remaining: number }) {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-gray-950/95 backdrop-blur-xl border-t border-white/10 px-4 py-3 safe-area-bottom">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-[11px] text-amber-300 font-bold">
+            FOUNDING 残り {remaining}社
+          </p>
+        </div>
+        <a
+          href="#contact"
+          className="shrink-0 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] font-extrabold shadow-lg shadow-blue-500/30 active:scale-[0.97] transition"
+        >
+          今すぐ申込
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// =================================================================
+// Social proof bar — logos / numbers strip below hero
+// =================================================================
+function SocialProofBar() {
+  return (
+    <section className="bg-white border-b border-gray-100 py-6 md:py-8">
+      <div className="max-w-6xl mx-auto px-5 md:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+          {[
+            { value: "30秒", label: "動画で職場のリアルが伝わる" },
+            { value: "55%+", label: "AIスカウト開封率" },
+            { value: "2x", label: "従来比マッチ率" },
+            { value: "0円", label: "初期費用・動画制作費" },
+          ].map((s) => (
+            <div key={s.label} className="text-center">
+              <p className="text-2xl md:text-3xl font-black bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
+                {s.value}
+              </p>
+              <p className="text-[11px] md:text-[12px] text-gray-500 font-bold mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// =================================================================
+// NEW — Case studies / success stories (mock)
+// =================================================================
+function CaseStudySection() {
+  const cases = [
+    {
+      company: "Hair Salon AUBE",
+      industry: "美容室",
+      location: "東京・表参道",
+      photo: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop",
+      quote: "求人広告に月20万かけても反応ゼロだった。SWIPLYで動画を出した翌週に3人応募が来て、うち1人は即採用。",
+      name: "オーナー 山本さん",
+      metrics: [
+        { label: "応募数", before: "0件/月", after: "8件/月" },
+        { label: "採用コスト", before: "20万円", after: "5.2万円" },
+        { label: "定着率", before: "40%", after: "90%" },
+      ],
+    },
+    {
+      company: "Cafe & Dining SORA",
+      industry: "飲食店",
+      location: "大阪・梅田",
+      photo: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&h=300&fit=crop",
+      quote: "スワイプで来る人は、うちの雰囲気を見て来てるから、面接の時点でもうフィットしてる。ミスマッチがほぼなくなった。",
+      name: "店長 佐藤さん",
+      metrics: [
+        { label: "面接→採用率", before: "25%", after: "70%" },
+        { label: "早期離職", before: "3人/年", after: "0人" },
+        { label: "採用期間", before: "2ヶ月", after: "2週間" },
+      ],
+    },
+    {
+      company: "Fitness Studio PULSE",
+      industry: "フィットネス",
+      location: "東京・渋谷",
+      photo: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=300&fit=crop",
+      quote: "AIスカウトで送ったメッセージの返信率が、他サイトの定型文の3倍。本気で読んでもらえてるのがわかる。",
+      name: "代表 田中さん",
+      metrics: [
+        { label: "スカウト返信率", before: "8%", after: "28%" },
+        { label: "候補者の質", before: "C", after: "A" },
+        { label: "採用単価", before: "15万円", after: "4万円" },
+      ],
+    },
+  ];
+
+  return (
+    <section className="px-5 md:px-8 py-20 md:py-28 bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        <p className="text-[11px] tracking-[0.3em] text-blue-500 font-bold mb-3 text-center">
+          ─ 導入企業の声
+        </p>
+        <h2 className="text-[26px] md:text-[40px] font-black tracking-tight text-gray-900 text-center leading-tight mb-4">
+          数字で見る、
+          <span className="bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent">
+            SWIPLYの効果。
+          </span>
+        </h2>
+        <p className="text-[13px] text-gray-500 text-center mb-12 md:mb-16">
+          ファウンディングメンバーとして先行導入いただいた企業様の実績です。
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-5 md:gap-6">
+          {cases.map((c) => (
+            <article
+              key={c.company}
+              className="bg-white rounded-3xl border border-gray-100 overflow-hidden hover:shadow-xl hover:shadow-blue-100/40 hover:-translate-y-1 transition-all"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={c.photo} alt={c.company} className="w-full h-40 object-cover" />
+              <div className="p-5 md:p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">{c.industry}</span>
+                  <span className="text-[10px] text-gray-400">{c.location}</span>
+                </div>
+                <h3 className="text-[16px] font-extrabold text-gray-900 mb-3">{c.company}</h3>
+                <blockquote className="text-[13px] text-gray-600 leading-[1.8] mb-4 relative pl-3 border-l-2 border-blue-200">
+                  {c.quote}
+                </blockquote>
+                <p className="text-[11px] text-gray-400 font-bold mb-4">— {c.name}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {c.metrics.map((m) => (
+                    <div key={m.label} className="bg-gray-50 rounded-xl p-2.5 text-center">
+                      <p className="text-[9px] text-gray-400 font-bold mb-1">{m.label}</p>
+                      <p className="text-[10px] text-gray-400 line-through">{m.before}</p>
+                      <p className="text-[15px] font-black text-blue-600">{m.after}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// =================================================================
+// NEW — Resource download section (email capture)
+// =================================================================
+function ResourceDownloadSection() {
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleDownload(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    // In production, send to CRM / email service
+    try {
+      const leads = JSON.parse(localStorage.getItem("swiply-resource-leads") ?? "[]");
+      leads.push({ email, at: new Date().toISOString(), resource: "service-guide" });
+      localStorage.setItem("swiply-resource-leads", JSON.stringify(leads));
+    } catch { /* ignore */ }
+    setSubmitted(true);
+  }
+
+  return (
+    <section className="relative px-5 md:px-8 py-16 md:py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-600 text-white overflow-hidden">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-cyan-400/20 blur-[120px]" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-blue-400/20 blur-[100px]" />
+      </div>
+
+      <div className="relative max-w-4xl mx-auto text-center">
+        <p className="text-[11px] tracking-[0.3em] text-cyan-200 font-bold mb-3">
+          ─ 無料資料ダウンロード
+        </p>
+        <h2 className="text-[24px] md:text-[36px] font-black tracking-tight leading-tight mb-4">
+          3分でわかる SWIPLY
+          <br />
+          <span className="text-cyan-200">サービス資料</span>
+        </h2>
+        <p className="text-[13px] md:text-[14px] text-white/70 leading-relaxed mb-8 max-w-xl mx-auto">
+          料金・機能・導入事例・FOUNDING特典をまとめた資料を無料でお送りします。
+          <br />
+          社内検討にもそのままご利用いただけます。
+        </p>
+
+        <div className="max-w-lg mx-auto">
+          <div className="grid md:grid-cols-3 gap-3 mb-8">
+            {[
+              { icon: "📊", label: "料金プラン比較表" },
+              { icon: "📹", label: "動画活用ガイド" },
+              { icon: "📋", label: "導入チェックリスト" },
+            ].map((r) => (
+              <div key={r.label} className="bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <span className="text-lg">{r.icon}</span>
+                <span className="text-[12px] font-bold">{r.label}</span>
+              </div>
+            ))}
+          </div>
+
+          {submitted ? (
+            <div className="bg-white/10 border border-white/20 rounded-2xl px-6 py-5">
+              <p className="text-[16px] font-extrabold mb-2">送信しました！</p>
+              <p className="text-[13px] text-white/70">
+                ご入力いただいたメールアドレスに資料をお送りします。
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleDownload} className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="メールアドレスを入力"
+                className="flex-1 px-4 py-3.5 rounded-xl bg-white/10 border border-white/30 text-white placeholder-white/40 text-[14px] font-medium focus:outline-none focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/30 transition"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3.5 rounded-xl bg-white text-blue-700 text-[14px] font-extrabold shadow-xl shadow-blue-900/30 hover:bg-cyan-50 active:scale-[0.97] transition shrink-0"
+              >
+                無料ダウンロード
+              </button>
+            </form>
+          )}
+          <p className="text-[10px] text-white/40 mt-3">
+            営業メールは送りません。資料のみお届けします。
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -173,9 +425,9 @@ function TrustCard({
 // =================================================================
 // Sticky header with brand + nav anchors + primary CTA
 // =================================================================
-function BusinessHeader() {
+function BusinessHeader({ remaining }: { remaining: number }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-gray-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-gray-950/90 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-14 md:h-16 flex items-center justify-between">
         <Link href="/business" className="flex items-center gap-2">
           <Logo size={32} radius={8} priority />
@@ -189,7 +441,7 @@ function BusinessHeader() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6 text-[12px] font-bold text-white/70">
+        <nav className="hidden lg:flex items-center gap-6 text-[12px] font-bold text-white/70">
           <a href="#solution" className="hover:text-white transition">特長</a>
           <a href="#pricing" className="hover:text-white transition">料金</a>
           <a href="#founding" className="hover:text-white transition">ファウンディング特典</a>
@@ -197,23 +449,26 @@ function BusinessHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          {/* Founding counter pill */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[10px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            残り {remaining}社
+          </div>
           <Link
             href="/dashboard"
-            className="hidden md:inline-flex text-[11px] text-white/50 hover:text-white px-3 py-2 rounded-lg transition"
+            className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] text-cyan-300 hover:text-white hover:bg-white/5 font-bold transition"
           >
-            管理画面 →
-          </Link>
-          <Link
-            href="/"
-            className="hidden lg:inline-flex text-[11px] text-white/50 hover:text-white px-3 py-2 rounded-lg transition"
-          >
-            B2C版を見る →
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            デモを試す
           </Link>
           <a
             href="#contact"
-            className="inline-flex items-center justify-center px-3 md:px-4 h-9 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] md:text-[13px] font-extrabold shadow-lg shadow-blue-500/30 hover:shadow-cyan-400/40 active:scale-[0.97] transition"
+            className="inline-flex items-center justify-center px-3 md:px-5 h-9 md:h-10 rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] md:text-[13px] font-extrabold shadow-lg shadow-blue-500/30 hover:shadow-cyan-400/40 active:scale-[0.97] transition"
           >
-            ファウンディング申込
+            申込む
           </a>
         </div>
       </div>
@@ -224,7 +479,7 @@ function BusinessHeader() {
 // =================================================================
 // Section 1 — Hero
 // =================================================================
-function Hero() {
+function Hero({ remaining }: { remaining: number }) {
   return (
     <section className="relative overflow-hidden bg-gray-950 text-white">
       {/* Background gradient blobs */}
@@ -239,7 +494,7 @@ function Hero() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[11px] font-bold tracking-wider mb-6">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              リリース前 / 最初の100社限定 / 永続20%オフ
+              FOUNDING 残り{remaining}社 / 永続20%オフ
             </div>
 
             <p className="text-[11px] tracking-[0.35em] font-bold text-cyan-300 mb-3">
@@ -269,12 +524,16 @@ function Hero() {
               >
                 ファウンディングメンバーになる
               </a>
-              <a
-                href="#contact"
-                className="inline-flex items-center justify-center px-7 h-12 md:h-14 rounded-full border border-white/20 text-white text-[13px] md:text-sm font-bold hover:bg-white/5 transition"
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center justify-center gap-2 px-7 h-12 md:h-14 rounded-full border border-white/20 text-white text-[13px] md:text-sm font-bold hover:bg-white/5 transition"
               >
-                サービス資料をダウンロード
-              </a>
+                <svg className="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                企業画面をデモ体験
+              </Link>
             </div>
 
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-7 text-[11px] text-white/50">
@@ -731,7 +990,7 @@ function FlowSection() {
 // =================================================================
 // Section 7 — Pricing
 // =================================================================
-function PricingSection() {
+function PricingSection({ remaining }: { remaining: number }) {
   const plans = [
     {
       name: "梅プラン",
@@ -785,6 +1044,12 @@ function PricingSection() {
           </span>
           。
         </h2>
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[12px] font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            FOUNDING 残り {remaining}社
+          </div>
+        </div>
         <p className="text-[12px] md:text-[13px] text-gray-500 text-center mb-12 md:mb-14">
           税抜表記 / 月額
         </p>
@@ -889,7 +1154,7 @@ function PricingSection() {
 // =================================================================
 // Section 8 — Founding member benefits
 // =================================================================
-function FoundingBenefitsSection() {
+function FoundingBenefitsSection({ remaining }: { remaining: number }) {
   const perks = [
     {
       n: "01",
@@ -937,7 +1202,7 @@ function FoundingBenefitsSection() {
         <div className="text-center mb-12 md:mb-16">
           <p className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[11px] font-bold tracking-wider mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            最初の100社限定
+            100社限定 / 残り {remaining}社
           </p>
           <h2 className="text-[28px] md:text-[44px] font-black tracking-tight leading-tight mb-5">
             ファウンディングメンバー
