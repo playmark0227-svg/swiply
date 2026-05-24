@@ -69,21 +69,21 @@ function SwipeCardImpl({
     >
       {/* LIKE indicator */}
       <motion.div
-        className="absolute top-10 left-6 z-20 -rotate-12"
+        className="absolute top-12 left-6 z-20 -rotate-12"
         style={{ opacity: likeOpacity }}
       >
-        <div className="bg-emerald-500 rounded-xl px-5 py-2 shadow-lg shadow-emerald-500/30">
-          <span className="text-2xl font-black text-white tracking-wide">LIKE</span>
+        <div className="bg-gradient-to-r from-emerald-500 to-green-400 rounded-2xl px-6 py-2.5 shadow-xl shadow-emerald-500/40 border-2 border-white/30">
+          <span className="text-2xl font-black text-white tracking-widest drop-shadow">LIKE</span>
         </div>
       </motion.div>
 
       {/* NOPE indicator */}
       <motion.div
-        className="absolute top-10 right-6 z-20 rotate-12"
+        className="absolute top-12 right-6 z-20 rotate-12"
         style={{ opacity: nopeOpacity }}
       >
-        <div className="bg-red-500 rounded-xl px-5 py-2 shadow-lg shadow-red-500/30">
-          <span className="text-2xl font-black text-white tracking-wide">NOPE</span>
+        <div className="bg-gradient-to-r from-red-500 to-rose-400 rounded-2xl px-6 py-2.5 shadow-xl shadow-red-500/40 border-2 border-white/30">
+          <span className="text-2xl font-black text-white tracking-widest drop-shadow">NOPE</span>
         </div>
       </motion.div>
 
@@ -92,8 +92,11 @@ function SwipeCardImpl({
         className="absolute bottom-28 left-1/2 -translate-x-1/2 z-20"
         style={{ opacity: detailOpacity }}
       >
-        <div className="bg-blue-500 rounded-xl px-5 py-2 shadow-lg shadow-blue-500/30">
-          <span className="text-lg font-black text-white tracking-wide">DETAIL ↑</span>
+        <div className="bg-gradient-to-r from-blue-500 to-cyan-400 rounded-2xl px-6 py-2.5 shadow-xl shadow-blue-500/40 border-2 border-white/30 flex items-center gap-2">
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+          </svg>
+          <span className="text-lg font-black text-white tracking-wide drop-shadow">DETAIL</span>
         </div>
       </motion.div>
 
