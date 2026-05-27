@@ -7,6 +7,14 @@ import { motion } from "framer-motion";
 import { haptic } from "@/lib/haptic";
 import { getTotalUnread, subscribeMatches } from "@/lib/services/matches";
 
+/**
+ * 5-tab symmetric bottom navigation:
+ *
+ *   ホーム  |  検索  |  [スワイプ]  |  メッセージ  |  マイページ
+ *     (2 left)         (center)          (2 right)
+ *
+ * Swipe sits dead-center with equal items on each side.
+ */
 const tabs = [
   {
     href: "/",
@@ -24,16 +32,16 @@ const tabs = [
     ),
   },
   {
-    href: "/baito",
-    label: "バイト",
+    href: "/search",
+    label: "検索",
     activeIcon: (
       <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M20 6h-4V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2H4a2 2 0 00-2 2v11a3 3 0 003 3h14a3 3 0 003-3V8a2 2 0 00-2-2zM10 4h4v2h-4zM21 13a23.86 23.86 0 01-9 2 23.86 23.86 0 01-9-2V8a1 1 0 011-1h16a1 1 0 011 1z" />
+        <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0016 9.5 6.5 6.5 0 109.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
       </svg>
     ),
     inactiveIcon: (
-      <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m8 0H8m8 0h2a2 2 0 012 2v6.764A23.859 23.859 0 0112 17.5a23.86 23.86 0 01-10-2.736V8a2 2 0 012-2h2" />
+      <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     ),
   },
@@ -41,20 +49,6 @@ const tabs = [
     href: "/swipe",
     label: "スワイプ",
     center: true,
-  },
-  {
-    href: "/career",
-    label: "正社員",
-    activeIcon: (
-      <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M19 2H5a3 3 0 00-3 3v14a3 3 0 003 3h14a3 3 0 003-3V5a3 3 0 00-3-3zm-8 15v-4a1 1 0 011-1h2a1 1 0 011 1v4zm6 0h-2v-4a3 3 0 00-3-3h-2a3 3 0 00-3 3v4H5V5h14zM9 7h2v2H9zm4 0h2v2h-2z" />
-      </svg>
-    ),
-    inactiveIcon: (
-      <svg className="w-[22px] h-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
-    ),
   },
   {
     href: "/messages",

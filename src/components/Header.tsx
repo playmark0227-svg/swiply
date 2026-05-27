@@ -39,14 +39,16 @@ const PAGE_TITLE: Record<string, string> = {
   "/messages": "メッセージ",
 };
 
-/** Tabs rendered inline in the header on desktop (md+). */
+/** Tabs rendered inline in the header on desktop (md+).
+ *  Desktop has room for category tabs + the right-side icon bar
+ *  (search / messages / notifications / likes), so the tab set
+ *  focuses on job categories with スワイプ as the accent centre. */
 const DESKTOP_TABS = [
   { href: "/", label: "ホーム", exact: true },
   { href: "/baito", label: "バイト" },
-  { href: "/gig", label: "単発" },
   { href: "/swipe", label: "スワイプ", accent: true },
+  { href: "/gig", label: "単発" },
   { href: "/career", label: "正社員" },
-  { href: "/profile", label: "マイページ" },
 ];
 
 export default function Header() {

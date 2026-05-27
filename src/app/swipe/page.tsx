@@ -58,7 +58,7 @@ export default function SwipePage() {
   const typeLabel = TYPE_OPTIONS.find((t) => t.value === jobType)?.label ?? "";
 
   return (
-    <div className="swipe-page flex flex-col h-dvh bg-gray-50">
+    <div className="swipe-page flex flex-col h-dvh bg-[#fbf8f3]">
       {/* Custom header with dropdown */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100/50">
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-11 md:h-14 flex items-center justify-between">
