@@ -7,20 +7,7 @@ import {
   type CompanyThread,
   type CompanyMessage,
 } from "@/lib/services/companyDemo";
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - Date.parse(iso);
-  if (Number.isNaN(diff)) return "";
-  if (diff < 60_000) return "たった今";
-  if (diff < 3600_000) return `${Math.floor(diff / 60_000)}分前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3600_000)}時間前`;
-  return `${Math.floor(diff / 86_400_000)}日前`;
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-}
+import { relativeTime, formatTime } from "@/lib/dateFormat";
 
 export default function DashboardMessagesPage() {
   const [threads] = useState(getCompanyThreads);

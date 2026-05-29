@@ -51,7 +51,14 @@ export async function saveProfile(profile: UserProfile): Promise<void> {
 function readLocal(): UserProfile {
   if (typeof window === "undefined") return defaultProfile;
   const stored = localStorage.getItem(STORAGE_KEY);
-  return stored ? { ...defaultProfile, ...JSON.parse(stored) } : defaultProfile;
+  if (!stored) return defaultProfile;
+  try {
+    // Spread defaults first so a partial/legacy stored profile can't leave
+    // required array fields undefined (downstream .map/.includes would throw).
+    return { ...defaultProfile, ...(JSON.parse(stored) as Partial<UserProfile>) };
+  } catch {
+    return defaultProfile;
+  }
 }
 
 function writeLocal(profile: UserProfile): void {

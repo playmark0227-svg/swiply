@@ -24,11 +24,12 @@
  *
  * Channel: "SWIPLY" (developers.line.biz/console)
  */
+import { BASE_PATH } from "@/lib/site";
+
 // 2005114375 was the SWIPLY provider ID — the channel ID is 2009964059.
 const DEFAULT_CHANNEL_ID = "2009964059";
 const CHANNEL_ID = process.env.NEXT_PUBLIC_LINE_CHANNEL_ID || DEFAULT_CHANNEL_ID;
 const CALLBACK_PATH = "/login/line/callback";
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
 export const isLineConfigured = !!CHANNEL_ID;
 

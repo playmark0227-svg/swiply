@@ -41,7 +41,8 @@ export default function SearchBar({
       return;
     }
     if (navigateToSearch) {
-      router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
+      // Trailing slash to match `trailingSlash: true` (and the JSON-LD search action).
+      router.push(q ? `/search/?q=${encodeURIComponent(q)}` : "/search/");
     }
   }
 
@@ -69,7 +70,7 @@ export default function SearchBar({
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         autoFocus={autoFocus}
-        className="flex-1 min-w-0 bg-transparent text-sm md:text-[15px] text-gray-900 placeholder:text-gray-300 focus:outline-none"
+        className="flex-1 min-w-0 bg-transparent text-sm md:text-[15px] text-gray-900 placeholder:text-gray-400 focus:outline-none"
       />
       {value && (
         <button

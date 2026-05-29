@@ -376,17 +376,24 @@ export interface DailyStats {
 }
 
 export function getWeeklyStats(): DailyStats[] {
+  // Deterministic per-day pseudo-random (seeded by the date) instead of
+  // Math.random(), so the chart is stable across re-renders. Call this from a
+  // client effect — it uses `new Date()`, which must not run during the static
+  // prerender (would mismatch on hydration).
+  const seeded = (seed: number, mod: number) =>
+    Math.floor((Math.abs(Math.sin(seed)) * 10000) % mod);
   const stats: DailyStats[] = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     const dateStr = `${d.getMonth() + 1}/${d.getDate()}`;
+    const base = (d.getMonth() + 1) * 100 + d.getDate();
     stats.push({
       date: dateStr,
-      views: 120 + Math.floor(Math.random() * 80),
-      likes: 8 + Math.floor(Math.random() * 12),
-      matches: 2 + Math.floor(Math.random() * 5),
-      applications: 1 + Math.floor(Math.random() * 3),
+      views: 120 + seeded(base + 1, 80),
+      likes: 8 + seeded(base + 2, 12),
+      matches: 2 + seeded(base + 3, 5),
+      applications: 1 + seeded(base + 4, 3),
     });
   }
   return stats;

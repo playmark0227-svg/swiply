@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardShell from "@/components/DashboardShell";
 import {
   getCompanyJobs,
@@ -12,7 +12,12 @@ import {
 export default function DashboardAnalyticsPage() {
   const [jobs] = useState(getCompanyJobs);
   const [applicants] = useState(getApplicants);
-  const weekly = getWeeklyStats();
+  // getWeeklyStats() reads `new Date()`, so it must run client-side only —
+  // computing it during the static prerender would mismatch on hydration.
+  const [weekly, setWeekly] = useState<ReturnType<typeof getWeeklyStats>>([]);
+  useEffect(() => {
+    setWeekly(getWeeklyStats());
+  }, []);
   const kpi = getKPIs();
 
   // Per-job breakdown
@@ -152,10 +157,18 @@ export default function DashboardAnalyticsPage() {
                 );
               })}
             </div>
-            <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-50 text-[10px] text-gray-400">
-              <span>最大 {Math.max(...weekly.map((d) => d.views))} 閲覧/日</span>
-              <span>平均 {Math.round(weekly.reduce((s, d) => s + d.views, 0) / weekly.length)} 閲覧/日</span>
-            </div>
+            {weekly.length > 0 && (
+              <div className="flex items-center gap-3 mt-3 pt-2 border-t border-gray-50 text-[10px] text-gray-400">
+                <span>最大 {Math.max(...weekly.map((d) => d.views))} 閲覧/日</span>
+                <span>
+                  平均{" "}
+                  {Math.round(
+                    weekly.reduce((s, d) => s + d.views, 0) / weekly.length
+                  )}{" "}
+                  閲覧/日
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Stage distribution */}

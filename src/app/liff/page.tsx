@@ -38,11 +38,11 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Logo from "@/components/Logo";
 import { isLiffConfigured } from "@/lib/services/liffAuth";
+import { BASE_PATH } from "@/lib/site";
 
 type Phase = "loading" | "handed-off" | "error";
 
 const FINISH_PATH = "/login/line/finish";
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
 
 function buildFinishUrl(idToken: string, next: string): string {
   const origin =

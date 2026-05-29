@@ -79,13 +79,13 @@ function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
 function useAnimatedCounter(target: number, duration = 1800, active = true) {
   const [value, setValue] = useState(0);
   useEffect(() => {
-    if (!active) return;
+    if (!active || !Number.isFinite(target)) return;
     const start = performance.now();
     let raf: number;
     function tick(now: number) {
       const t = Math.min((now - start) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
-      setValue(Math.round(eased * target));
+      setValue(Math.max(0, Math.round(eased * target)));
       if (t < 1) raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
@@ -122,7 +122,7 @@ function FadeIn({
 
 // ── Live-ish counter for FOMO ──
 function useLiveCounter(base: number) {
-  const [value, setValue] = useState(base);
+  const [value, setValue] = useState(Number.isFinite(base) ? base : 0);
   useEffect(() => {
     const iv = setInterval(() => {
       setValue((v) => v + Math.floor(Math.random() * 3));

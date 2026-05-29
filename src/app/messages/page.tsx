@@ -36,24 +36,7 @@ import {
 import { getJobById } from "@/lib/services/jobs";
 import type { Job } from "@/types/job";
 import { haptic } from "@/lib/haptic";
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - Date.parse(iso);
-  if (Number.isNaN(diff)) return "";
-  if (diff < 60_000) return "たった今";
-  if (diff < 3600_000) return `${Math.floor(diff / 60_000)}分前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3600_000)}時間前`;
-  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}日前`;
-  return new Date(iso).toLocaleDateString("ja-JP");
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getHours().toString().padStart(2, "0")}:${d
-    .getMinutes()
-    .toString()
-    .padStart(2, "0")}`;
-}
+import { relativeTime, formatTime } from "@/lib/dateFormat";
 
 export default function MessagesPage() {
   const auth = useAuth();

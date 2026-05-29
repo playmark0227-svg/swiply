@@ -1,8 +1,7 @@
 "use client";
 
 import Image from "next/image";
-
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
+import { BASE_PATH } from "@/lib/site";
 
 interface LogoProps {
   /** Pixel size of the square mark. */
