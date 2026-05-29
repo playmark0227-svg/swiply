@@ -3,29 +3,40 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
 import { AuthProvider } from "@/components/AuthProvider";
+import {
+  BASE_PATH,
+  SITE_ORIGIN,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_DESCRIPTION,
+} from "@/lib/site";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
-
-const SITE_DESCRIPTION =
-  "履歴書の前に、スワイプでいい。求人の発見からマッチ後のチャット、ビデオ面接 + AI 振り返りまで、就職活動のひと通りをアプリ１つで。";
+const OG_IMAGE = {
+  url: `${BASE_PATH}/og.jpg`,
+  width: 1200,
+  height: 630,
+  alt: SITE_TITLE,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(
-    process.env.NODE_ENV === "production"
-      ? "https://playmark0227-svg.github.io"
-      : "http://localhost:3000"
+    process.env.NODE_ENV === "production" ? SITE_ORIGIN : "http://localhost:3000"
   ),
   title: {
-    default: "SWIPLY — 履歴書の前に、スワイプでいい。",
-    template: "%s | SWIPLY",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
-  applicationName: "SWIPLY",
+  applicationName: SITE_NAME,
+  alternates: {
+    canonical: `${BASE_PATH}/`,
+  },
   keywords: [
     "求人",
     "転職",
@@ -45,26 +56,26 @@ export const metadata: Metadata = {
     apple: `${BASE_PATH}/apple-touch-icon.png`,
   },
   openGraph: {
-    title: "SWIPLY — 履歴書の前に、スワイプでいい。",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     type: "website",
     locale: "ja_JP",
-    siteName: "SWIPLY",
-    images: [`${BASE_PATH}/icon-512.png`],
+    siteName: SITE_NAME,
+    images: [OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "SWIPLY — 履歴書の前に、スワイプでいい。",
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    images: [`${BASE_PATH}/icon-512.png`],
+    images: [OG_IMAGE],
   },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-to-zoom is left enabled on purpose — disabling it (maximumScale/
+  // userScalable) is a WCAG 1.4.4 failure and hurts low-vision users.
   themeColor: "#fbf8f3",
 };
 

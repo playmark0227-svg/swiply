@@ -33,7 +33,7 @@ export default function Logo({
       style={{ width: size, height: size, borderRadius: r }}
     >
       <Image
-        src={`${BASE_PATH}/logo.png`}
+        src={`${BASE_PATH}/logo.webp`}
         alt={alt}
         fill
         sizes={`${size}px`}

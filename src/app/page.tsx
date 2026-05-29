@@ -16,8 +16,39 @@ import { getRecentlyViewedIds } from "@/lib/services/recentlyViewed";
 import { scoreJobs } from "@/lib/services/recommendations";
 import type { Job } from "@/types/job";
 import type { UserProfile } from "@/types/profile";
+import { BASE_PATH, SITE_URL, SITE_DESCRIPTION } from "@/lib/site";
 
-const BASE_PATH = process.env.NODE_ENV === "production" ? "/swiply" : "";
+// Organization + WebSite structured data — helps search engines and AI
+// surface SWIPLY with rich results (and wires up the sitelinks search box).
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
+      name: "SWIPLY",
+      url: `${SITE_URL}/`,
+      logo: `${SITE_URL}/icon-512.png`,
+      description: SITE_DESCRIPTION,
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
+      name: "SWIPLY",
+      url: `${SITE_URL}/`,
+      inLanguage: "ja",
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${SITE_URL}/search/?q={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
 
 // ── Scroll-triggered IntersectionObserver hook ──
 function useScrollReveal<T extends HTMLElement = HTMLDivElement>(
@@ -136,6 +167,12 @@ export default function Home() {
 
   return (
     <div className="min-h-dvh bg-[#0a0a0f]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(JSON_LD).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
           SECTION 1: HERO — THE 3-SECOND HOOK
           Dark, cinematic, single CTA. No nav bar.
@@ -270,7 +307,7 @@ function HeroSection() {
     <section className="relative min-h-[100dvh] md:min-h-[90dvh] flex flex-col items-center justify-center overflow-hidden">
       {/* Background — cinematic cover photo with dark overlay */}
       <Image
-        src={`${BASE_PATH}/cover.png`}
+        src={`${BASE_PATH}/cover.webp`}
         alt=""
         fill
         priority
@@ -688,7 +725,7 @@ function FeatureShowcase() {
               tag="CORE"
               title="読む前に、見て決める。"
               description="長文の求人票を読み比べる時代は終わり。写真と30秒動画で職場の雰囲気が伝わる。直感で右にスワイプ。それが応募の第一歩。"
-              image={`${BASE_PATH}/images/screens/screen-swipe.jpg`}
+              image={`${BASE_PATH}/images/screens/screen-swipe.webp`}
               imageAlt="SWIPLY のスワイプ画面"
               reverse={false}
               accent="violet"
@@ -701,7 +738,7 @@ function FeatureShowcase() {
               tag="MATCH"
               title="マッチしたら、すぐ話せる。"
               description="お互いLIKEでマッチ成立。その場でチャット開始。「よろしくお願いします」から面接日程まで、メッセージひとつで進められる。"
-              image={`${BASE_PATH}/images/screens/screen-messages.jpg`}
+              image={`${BASE_PATH}/images/screens/screen-messages.webp`}
               imageAlt="SWIPLY のメッセージ画面"
               reverse={true}
               accent="fuchsia"

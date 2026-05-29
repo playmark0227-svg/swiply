@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
   basePath: isProd ? "/swiply" : "",
   assetPrefix: isProd ? "/swiply/" : "",
   trailingSlash: true,
+  // Pin the workspace root. A stray ~/package-lock.json otherwise makes Next
+  // infer the home directory as the root, which breaks module resolution.
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
