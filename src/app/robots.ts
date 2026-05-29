@@ -15,7 +15,21 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/admin/", "/dashboard/", "/liff/", "/login/"],
+      // Personal/operator surfaces with no indexable content (all data is
+      // client-side and user-specific). Public discovery pages stay allowed.
+      disallow: [
+        "/admin/",
+        "/dashboard/",
+        "/liff/",
+        "/login/",
+        "/signup/",
+        "/profile/",
+        "/messages/",
+        "/likes/",
+        "/applications/",
+        "/notifications/",
+        "/interview/",
+      ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };

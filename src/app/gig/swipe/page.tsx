@@ -1,26 +1,12 @@
-"use client";
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
+import ClientGigSwipePage from "./ClientGigSwipePage";
 
-import { useEffect, useState } from "react";
-import Header from "@/components/Header";
-import SwipeDeck from "@/components/SwipeDeck";
-import { getJobsByType } from "@/lib/services/jobs";
-import type { Job } from "@/types/job";
+export const metadata: Metadata = pageMetadata(
+  "単発バイトをスワイプで探す",
+  "単発・スキマバイトを写真と動画でチェック。右にスワイプして即日勤務OKの案件に応募。SWIPLYのスワイプ求人。"
+);
 
 export default function GigSwipePage() {
-  const [jobs, setJobs] = useState<Job[]>([]);
-
-  useEffect(() => {
-    getJobsByType("gig").then(setJobs);
-  }, []);
-
-  return (
-    <div className="swipe-page flex flex-col h-dvh bg-gray-50">
-      <Header />
-      <main className="flex-1 relative overflow-hidden">
-        <div className="max-w-lg mx-auto h-full p-2 pb-0">
-          <SwipeDeck jobs={jobs} />
-        </div>
-      </main>
-    </div>
-  );
+  return <ClientGigSwipePage />;
 }
