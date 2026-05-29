@@ -514,14 +514,14 @@ function SocialProofStrip() {
 
         {/* Employer logos — scrolling marquee */}
         <div className="relative">
-          <p className="text-[10px] text-white/25 font-bold tracking-[0.25em] text-center mb-3">
+          <p className="text-[10px] text-white/45 font-bold tracking-[0.25em] text-center mb-3">
             TRUSTED BY
           </p>
           <div className="flex items-center justify-center gap-6 md:gap-10 flex-wrap">
             {employers.map((name) => (
               <span
                 key={name}
-                className="text-[12px] md:text-[14px] font-bold text-white/20 hover:text-white/40 transition-colors whitespace-nowrap"
+                className="text-[12px] md:text-[14px] font-bold text-white/40 hover:text-white/70 transition-colors whitespace-nowrap"
               >
                 {name}
               </span>
@@ -685,7 +685,7 @@ function StepCard({
           >
             {icon}
           </div>
-          <span className="text-[11px] font-black text-white/20 tracking-[0.2em] tabular-nums">
+          <span className="text-[11px] font-black text-white/40 tracking-[0.2em] tabular-nums">
             STEP {number}
           </span>
         </div>
@@ -1201,19 +1201,19 @@ function FinalCTASection() {
           <p className="font-black tracking-[0.25em] bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text text-transparent text-[12px]">
             SWIPLY
           </p>
-          <p className="text-[10px] text-white/20">
+          <p className="text-[10px] text-white/40">
             Made with coffee in Tokyo. &copy; {new Date().getFullYear()} SWIPLY
           </p>
-          <div className="flex items-center gap-4 mt-2 text-[11px] text-white/20">
-            <Link href="/business" className="hover:text-white/40 transition">
+          <div className="flex items-center gap-4 mt-2 text-[11px] text-white/50">
+            <Link href="/business" className="hover:text-white/80 transition">
               企業の方へ
             </Link>
             <span>・</span>
-            <Link href="/search" className="hover:text-white/40 transition">
+            <Link href="/search" className="hover:text-white/80 transition">
               求人検索
             </Link>
             <span>・</span>
-            <Link href="/verify" className="hover:text-white/40 transition">
+            <Link href="/verify" className="hover:text-white/80 transition">
               本人確認
             </Link>
           </div>
