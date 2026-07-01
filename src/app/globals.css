@@ -3,21 +3,62 @@
 :root {
   --background: #ffffff;
   --foreground: #111111;
+
+  /* ── Brand surfaces ── */
+  --hero-bg: #0a0a0f;
+  --body-bg: #fbf8f3;
+
+  /* ── Accents (reserved — used sparingly) ── */
+  --accent: #8b5cf6;         /* violet-500  */
+  --accent-2: #d946ef;       /* fuchsia-500 */
+
+  /* ── Motion ── the single easing vocabulary for the whole site ── */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /*
+   * Japanese heading stack. We deliberately do NOT ship a multi-MB JP
+   * webfont — the page is a static export served from GitHub Pages and the
+   * weight cost would undercut the very "considered" feel we're after.
+   * Instead we lean on the best-in-class native JP gothics per platform and
+   * turn on proportional metrics (palt) for tighter, intentional spacing.
+   */
+  --font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic Medium",
+    "YuGothic", "Meiryo", "Noto Sans JP", sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-display), var(--font-geist-sans), sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
+  font-family: var(--font-sans), var(--font-jp), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overscroll-behavior: none;
+}
+
+/*
+ * Headings carry the Japanese display stack with proportional kana/kanji
+ * metrics. `.font-display` is the Latin geometric (Space Grotesk) reserved
+ * for eyebrows, the wordmark and big stat numerals.
+ */
+.jp-heading {
+  font-family: var(--font-jp);
+  font-feature-settings: "palt" 1;
+  letter-spacing: 0.01em;
+}
+.font-display {
+  font-family: var(--font-display), var(--font-geist-sans), sans-serif;
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 /* Hide scrollbar for horizontal scroll strips */
@@ -46,8 +87,8 @@ body {
 .fade-in-up {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.7s var(--ease-out-expo),
+              transform 0.7s var(--ease-out-expo);
 }
 .fade-in-up.visible {
   opacity: 1;
@@ -73,13 +114,53 @@ body {
   animation: shimmer 1.8s infinite;
 }
 
-/* ── Pulse glow for CTA buttons ── */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.3); }
-  50%      { box-shadow: 0 0 20px 6px rgba(139, 92, 246, 0.15); }
+/*
+ * ── Film-grain texture ──
+ * A ~1KB inline feTurbulence noise layer. Applied over the dark cinematic
+ * sections to break flatness — the kind of texture that reads as "authored"
+ * rather than "generated". Sits above backgrounds, below content.
+ */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+
+/* ── CTA glow — state-based, not an infinite loop ── */
+.btn-glow {
+  transition: box-shadow 0.4s var(--ease-out-expo), transform 0.25s var(--ease-out-expo);
+}
+.btn-glow:hover {
+  box-shadow: 0 0 32px 4px rgba(139, 92, 246, 0.28);
+}
+
+/* ── Keyboard focus: one consistent ring everywhere ── */
+:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/*
+ * ── Reduced-motion ──
+ * Table-stakes accessibility, and a genuine craft signal. Collapse every
+ * looping/decorative animation and long transition for users who ask for it.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .grain::after { display: none; }
 }
 
 /*

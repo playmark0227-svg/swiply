@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/Toast";
 import { AuthProvider } from "@/components/AuthProvider";
@@ -15,6 +15,16 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
+});
+
+// Latin geometric display face — reserved for eyebrows, the SWIPLY wordmark
+// and large stat numerals. Gives the Latin type a designed voice without
+// stealing the JP headings' native gothic character.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["500", "600", "700"],
 });
 
 const OG_IMAGE = {
@@ -85,7 +95,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ja" className={`${geistSans.variable} h-full antialiased`}>
+    <html
+      lang="ja"
+      className={`${geistSans.variable} ${spaceGrotesk.variable} h-full antialiased`}
+    >
       <body className="min-h-full font-sans">
         <AuthProvider>
           <ToastProvider>{children}</ToastProvider>
