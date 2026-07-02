@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   motion,
   AnimatePresence,
@@ -77,7 +77,7 @@ const variants = {
 
 type DeckItem = { id: number; job: DemoJob };
 
-function DeckCard({ job }: { job: DemoJob }) {
+function DeckCard({ job, eager }: { job: DemoJob; eager?: boolean }) {
   return (
     <div className="relative w-full h-full rounded-[1.75rem] overflow-hidden bg-gray-900 ring-1 ring-white/10 shadow-2xl shadow-black/50">
       <Image
@@ -86,6 +86,7 @@ function DeckCard({ job }: { job: DemoJob }) {
         fill
         sizes="280px"
         className="object-cover pointer-events-none"
+        loading={eager ? "eager" : "lazy"}
         draggable={false}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10" />
@@ -164,7 +165,7 @@ function Card({
       onDragStart={onInteract}
       onDragEnd={draggable ? handleDragEnd : undefined}
     >
-      <DeckCard job={item.job} />
+      <DeckCard job={item.job} eager={item.id < 2} />
 
       {isTop && (
         <>
@@ -202,16 +203,34 @@ export default function HeroSwipeDemo() {
   );
   const [exitDir, setExitDir] = useState(1);
   const [interacted, setInteracted] = useState(false);
+  // "マッチ成立" micro-moment — shown once, on the visitor's first LIKE, so
+  // the demo teaches the full loop (swipe → match → chat) and not just the
+  // gesture. Once is a delight; every time would be noise.
+  const [matchWith, setMatchWith] = useState<DemoJob | null>(null);
+  const matchShown = useRef(false);
+  const matchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (matchTimer.current) clearTimeout(matchTimer.current);
+    };
+  }, []);
 
   function vote(dir: 1 | -1) {
     setInteracted(true);
     setExitDir(dir);
+    const top = deck[0];
     setDeck((prev) => {
       const rest = prev.slice(1);
       const id = nextId.current;
       nextId.current += 1;
       return [...rest, { id, job: DEMO_JOBS[id % DEMO_JOBS.length] }];
     });
+    if (dir === 1 && !matchShown.current && top) {
+      matchShown.current = true;
+      setMatchWith(top.job);
+      matchTimer.current = setTimeout(() => setMatchWith(null), 2200);
+    }
   }
 
   // Render the front two — top (draggable) + one behind for depth.
@@ -233,6 +252,31 @@ export default function HeroSwipeDemo() {
               onInteract={() => setInteracted(true)}
             />
           ))}
+        </AnimatePresence>
+
+        {/* Match moment — completes the story the gesture starts */}
+        <AnimatePresence>
+          {matchWith && (
+            <motion.div
+              initial={{ opacity: 0, scale: reduce ? 1 : 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduce ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none"
+              role="status"
+            >
+              {/* Sized by its own text (may overhang the card slightly, like a toast) */}
+              <div className="px-6 py-4 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl shadow-black/40 text-center">
+                <HeartIcon className="w-6 h-6 text-fuchsia-500 mx-auto mb-1.5" />
+                <p className="text-[14px] font-black text-gray-900 jp-heading whitespace-nowrap">
+                  お互いLIKEで、マッチ成立。
+                </p>
+                <p className="text-[11px] text-gray-500 mt-1 whitespace-nowrap">
+                  {matchWith.company}と、そのままチャットへ
+                </p>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Drag hint — fades once the visitor engages */}

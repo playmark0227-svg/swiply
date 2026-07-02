@@ -30,8 +30,38 @@ import type { Job } from "@/types/job";
 import type { UserProfile } from "@/types/profile";
 import { BASE_PATH, SITE_URL, SITE_DESCRIPTION } from "@/lib/site";
 
-// Organization + WebSite structured data — helps search engines and AI
-// surface SWIPLY with rich results (and wires up the sitelinks search box).
+// FAQ copy lives at module scope so the visible accordion and the FAQPage
+// structured data below can never drift apart.
+const FAQS = [
+  {
+    q: "本当に無料ですか？",
+    a: "はい、求職者は完全無料です。課金ポイントもありません。企業側の掲載料で運営しています。",
+  },
+  {
+    q: "スワイプだと、採用も“軽い”のでは？",
+    a: "見た目はカジュアルでも、掲載企業はSWIPLYの審査を通過しています。「軽く始められる」だけで、中身は真剣です。",
+  },
+  {
+    q: "活動が、いまの職場や学校に知られませんか？",
+    a: "あなたのスワイプ活動が公開されることはありません。プロフィールはマッチするまで匿名。何を・誰に見せるかは、あなたが決められます。",
+  },
+  {
+    q: "マッチングアプリと何が違うの？",
+    a: "目的が「仕事」であることです。企業は審査制で、やり取りはすべて求人単位。恋愛的な要素は一切ありません。",
+  },
+  {
+    q: "学生でも使えますか？",
+    a: "むしろ学生ユーザーが半分以上。アルバイトから新卒採用まで、幅広く対応しています。",
+  },
+  {
+    q: "個人情報は安全ですか？",
+    a: "マッチ前に企業へ公開されるのは、プロフィール写真と表示名のみ。本名や連絡先は、マッチしたあとに共有されます。",
+  },
+];
+
+// Organization + WebSite + FAQPage structured data — helps search engines
+// and AI surface SWIPLY with rich results (and wires up the sitelinks
+// search box).
 const JSON_LD = {
   "@context": "https://schema.org",
   "@graph": [
@@ -58,6 +88,15 @@ const JSON_LD = {
         },
         "query-input": "required name=search_term_string",
       },
+    },
+    {
+      "@type": "FAQPage",
+      "@id": `${SITE_URL}/#faq`,
+      mainEntity: FAQS.map((f) => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
     },
   ],
 };
@@ -388,7 +427,7 @@ function HeroSection() {
             </div>
 
             <h1
-              className="jp-heading text-[38px] sm:text-[52px] md:text-[58px] lg:text-[72px] font-black leading-[1.08] tracking-tight text-white mb-4 md:mb-6"
+              className="jp-heading text-[clamp(38px,6.5vw,72px)] font-black leading-[1.08] tracking-tight text-white mb-4 md:mb-6"
               style={rise(0.2)}
             >
               1スワイプで、
@@ -474,9 +513,9 @@ function ManifestoSection() {
       <div className="relative max-w-3xl mx-auto px-6 py-20 md:py-28 text-center">
         <FadeIn y={0}>
           <p className="text-[10px] tracking-[0.35em] text-violet-400 font-bold mb-6 font-display">
-            WHY SWIPE
+            01 — WHY SWIPE
           </p>
-          <p className="jp-heading text-[25px] md:text-[38px] font-black text-white leading-[1.45]">
+          <p className="jp-heading text-[clamp(25px,4vw,38px)] font-black text-white leading-[1.45]">
             写真と30秒の動画で、
             <br />
             会う前に「合うか」がわかる。
@@ -560,9 +599,9 @@ function HowItWorksSection() {
       <div className="max-w-5xl mx-auto px-6 md:px-8 py-16 md:py-24">
         <FadeIn y={0} className="text-center mb-12 md:mb-16">
           <p className="text-[10px] tracking-[0.3em] text-violet-400 font-bold mb-3 font-display">
-            HOW IT WORKS
+            02 — HOW IT WORKS
           </p>
-          <h2 className="jp-heading text-[27px] md:text-[42px] font-black text-white leading-tight">
+          <h2 className="jp-heading text-[clamp(27px,4.5vw,42px)] font-black text-white leading-tight">
             3分ではじめて、
             <br />
             1分で応募。
@@ -591,6 +630,9 @@ function HowItWorksSection() {
   );
 }
 
+// Step icons are drawn in SWIPLY's own visual language — a profile card, a
+// card mid-swipe, a chat bubble with a match heart — instead of stock
+// pictograms. Same stroke grammar as the rest of the site's glyphs.
 const STEPS = [
   {
     number: "01",
@@ -599,8 +641,11 @@ const STEPS = [
       "名前と写真だけ。履歴書は不要。あとから気が向いたら追加すればOK。",
     accent: "violet" as const,
     icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="3" />
+        <circle cx="9" cy="10.5" r="2" />
+        <path d="M6.2 16.5c.6-1.6 1.6-2.5 2.8-2.5s2.2.9 2.8 2.5" />
+        <path d="M14.5 9.5h4M14.5 12.5h3" />
       </svg>
     ),
   },
@@ -611,8 +656,10 @@ const STEPS = [
       "写真を見て、直感で右か左。気になったら上スワイプで詳細。通勤3駅分で結構進む。",
     accent: "fuchsia" as const,
     icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="10.5" height="15" rx="2.5" />
+        <path d="M17.5 7.5c2.4 1.9 3 5.3 1.3 8.2" />
+        <path d="M21.3 13.4l-2.5 2.3-2.3-2.5" />
       </svg>
     ),
   },
@@ -623,8 +670,13 @@ const STEPS = [
       "お互いのLIKEで成立。そのままチャットが始まる。ビデオ面接もアプリ内で完結。",
     accent: "pink" as const,
     icon: (
-      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 01-.825-.242m9.345-8.334a2.126 2.126 0 00-.476-.095 48.64 48.64 0 00-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0011.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155" />
+      <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4c4.4 0 8 2.9 8 6.5S16.4 17 12 17c-.9 0-1.8-.1-2.6-.35L5.5 19l1-3.2C5 14.6 4 12.7 4 10.5 4 6.9 7.6 4 12 4z" />
+        <path
+          d="M12 13.2l-.4-.36C9.9 11.4 9 10.5 9 9.5 9 8.7 9.6 8.1 10.4 8.1c.6 0 1.2.3 1.6.8.4-.5 1-.8 1.6-.8.8 0 1.4.6 1.4 1.4 0 1-.9 1.9-2.6 3.34z"
+          fill="currentColor"
+          stroke="none"
+        />
       </svg>
     ),
   },
@@ -682,9 +734,9 @@ function FeatureShowcase() {
       <div className="max-w-6xl mx-auto px-6 md:px-8 py-16 md:py-24">
         <FadeIn y={0} className="text-center mb-12 md:mb-16">
           <p className="text-[10px] tracking-[0.3em] text-violet-500 font-bold mb-3 font-display">
-            FEATURES
+            03 — FEATURES
           </p>
-          <h2 className="jp-heading text-[26px] md:text-[42px] font-black text-gray-900 leading-tight">
+          <h2 className="jp-heading text-[clamp(26px,4.5vw,42px)] font-black text-gray-900 leading-tight">
             見つける。話す。会う。
             <br />
             <span className="relative inline-block">
@@ -835,9 +887,9 @@ function WeeklySnapshot() {
       <div className="max-w-4xl mx-auto px-6 text-center">
         <FadeIn y={0}>
           <p className="text-[10px] tracking-[0.3em] text-violet-400 font-bold mb-3 font-display">
-            LAST WEEK
+            04 — LAST WEEK
           </p>
-          <h2 className="jp-heading text-[24px] md:text-[36px] font-black text-gray-900 leading-tight mb-8">
+          <h2 className="jp-heading text-[clamp(24px,3.8vw,36px)] font-black text-gray-900 leading-tight mb-8">
             先週、これだけの出会いがありました。
           </h2>
         </FadeIn>
@@ -898,9 +950,9 @@ function VoicesSection() {
       <div className="max-w-5xl mx-auto px-6 md:px-8">
         <FadeIn y={0} className="text-center mb-10 md:mb-14">
           <p className="text-[10px] tracking-[0.3em] text-gray-400 font-bold mb-2 font-display">
-            USER VOICES
+            05 — USER VOICES
           </p>
-          <h2 className="jp-heading text-[24px] md:text-[40px] font-black text-gray-900 leading-tight">
+          <h2 className="jp-heading text-[clamp(24px,4.2vw,40px)] font-black text-gray-900 leading-tight">
             使ってくれた人の、
             <br />
             リアルな声。
@@ -939,47 +991,20 @@ function VoicesSection() {
 }
 
 function FAQSection() {
-  const faqs = [
-    {
-      q: "本当に無料ですか？",
-      a: "はい、求職者は完全無料です。課金ポイントもありません。企業側の掲載料で運営しています。",
-    },
-    {
-      q: "スワイプだと、採用も“軽い”のでは？",
-      a: "見た目はカジュアルでも、掲載企業はSWIPLYの審査を通過しています。「軽く始められる」だけで、中身は真剣です。",
-    },
-    {
-      q: "活動が、いまの職場や学校に知られませんか？",
-      a: "あなたのスワイプ活動が公開されることはありません。プロフィールはマッチするまで匿名。何を・誰に見せるかは、あなたが決められます。",
-    },
-    {
-      q: "マッチングアプリと何が違うの？",
-      a: "目的が「仕事」であることです。企業は審査制で、やり取りはすべて求人単位。恋愛的な要素は一切ありません。",
-    },
-    {
-      q: "学生でも使えますか？",
-      a: "むしろ学生ユーザーが半分以上。アルバイトから新卒採用まで、幅広く対応しています。",
-    },
-    {
-      q: "個人情報は安全ですか？",
-      a: "マッチ前に企業へ公開されるのは、プロフィール写真と表示名のみ。本名や連絡先は、マッチしたあとに共有されます。",
-    },
-  ];
-
   return (
     <section className="bg-white py-14 md:py-20 border-y border-gray-100">
       <div className="max-w-3xl mx-auto px-6 md:px-8">
         <FadeIn y={0} className="text-center mb-8 md:mb-12">
           <p className="text-[10px] tracking-[0.3em] text-gray-400 font-bold mb-2 font-display">
-            FAQ
+            06 — FAQ
           </p>
-          <h2 className="jp-heading text-[22px] md:text-[36px] font-black text-gray-900">
+          <h2 className="jp-heading text-[clamp(22px,3.8vw,36px)] font-black text-gray-900">
             よくある質問
           </h2>
         </FadeIn>
 
         <div className="space-y-3 md:space-y-4">
-          {faqs.map((faq, i) => (
+          {FAQS.map((faq, i) => (
             <FadeIn key={faq.q} y={0} delay={i * 0.04}>
               <FAQItem q={faq.q} a={faq.a} index={i} />
             </FadeIn>
@@ -1086,7 +1111,7 @@ function FinalCTASection() {
           <p className="text-[11px] text-white/40 mb-4 tracking-widest font-display">
             GET STARTED
           </p>
-          <h2 className="jp-heading text-[30px] md:text-[52px] font-black text-white leading-tight mb-6">
+          <h2 className="jp-heading text-[clamp(30px,5.5vw,52px)] font-black text-white leading-tight mb-6">
             次の仕事は、
             <br />
             <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
