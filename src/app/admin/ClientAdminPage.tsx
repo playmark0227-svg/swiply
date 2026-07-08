@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import Logo from "@/components/Logo";
+import { useToast } from "@/components/Toast";
 import VideoUploader from "@/components/VideoUploader";
 import {
   listVideos,
@@ -83,22 +90,33 @@ type Tab =
 // =================================================================
 // Page entry
 // =================================================================
+// Stable no-op subscription for the hydration detector below.
+const subscribeNoop = () => () => {};
+
 export default function ClientAdminPage() {
-  // Lazy initializer: read auth state synchronously on the client. The
-  // page is dynamically imported via next/dynamic ({ ssr: false }), so
-  // this never runs during static generation.
-  const [authed, setAuthed] = useState<boolean | null>(() => {
-    if (typeof window === "undefined") return null;
-    return isAdminAuthenticated();
-  });
+  // Hydration-safe auth gate. The page is statically generated, so the
+  // server HTML and the FIRST client render must agree — both resolve to
+  // `null` (the dark splash) via useSyncExternalStore's server snapshot.
+  // Only after hydration does the client snapshot flip to `true` and the
+  // real sessionStorage-based auth state take over. This removes the
+  // hydration mismatch the old synchronous initializer caused on every
+  // load.
+  const hydrated = useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+  const [override, setOverride] = useState<boolean | null>(null);
+  const authed =
+    override !== null ? override : hydrated ? isAdminAuthenticated() : null;
 
   if (authed === null) {
     return <div className="min-h-dvh bg-gray-950" />;
   }
   if (!authed) {
-    return <AuthGate onAuthed={() => setAuthed(true)} />;
+    return <AuthGate onAuthed={() => setOverride(true)} />;
   }
-  return <AdminShell onSignOut={() => setAuthed(false)} />;
+  return <AdminShell onSignOut={() => setOverride(false)} />;
 }
 
 // =================================================================
@@ -198,6 +216,16 @@ function AuthGate({ onAuthed }: { onAuthed: () => void }) {
               <br />
               {defaults.password}
             </p>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(defaults.email);
+                setPassword(defaults.password);
+              }}
+              className="mt-2 w-full h-8 rounded-lg border border-amber-400/30 text-amber-200 text-[11px] font-bold hover:bg-amber-400/10 transition"
+            >
+              この認証情報を自動入力
+            </button>
           </div>
         )}
 
@@ -459,11 +487,18 @@ function QuickAction({ label, onClick }: { label: string; onClick: () => void })
 // =================================================================
 // Tab: Jobs
 // =================================================================
+type JobSortKey = "posted" | "salary" | "company";
+
 function JobsTab() {
+  const toast = useToast();
   const [editing, setEditing] = useState<Job | null>(null);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<"all" | JobType | "deleted">("all");
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<JobSortKey>("posted");
+  const [sortDir, setSortDir] = useState<1 | -1>(-1);
   const [bump, setBump] = useState(0);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Derive directly via useMemo — re-reads localStorage when `bump` ticks.
   const jobs = useMemo(
@@ -476,15 +511,58 @@ function JobsTab() {
     setBump((b) => b + 1);
   }
 
+  // "/" focuses the search box from anywhere on the tab (unless a modal
+  // is open or the user is already typing in a field).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "/" || editing || creating) return;
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      e.preventDefault();
+      searchRef.current?.focus();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [editing, creating]);
+
+  function toggleSort(key: JobSortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 1 ? -1 : 1));
+    } else {
+      setSortKey(key);
+      // Sensible first direction per column: newest / highest first,
+      // company names A→Z.
+      setSortDir(key === "company" ? 1 : -1);
+    }
+  }
+
   const visible = useMemo(() => {
-    if (filter === "all") return jobs;
-    if (filter === "deleted") return [];
-    return jobs.filter((j) => j.type === filter);
-  }, [jobs, filter]);
+    let list = jobs;
+    if (filter !== "all" && filter !== "deleted") {
+      list = list.filter((j) => j.type === filter);
+    }
+    const q = query.trim().toLowerCase();
+    if (q) {
+      list = list.filter((j) =>
+        [j.company, j.title, j.id, j.location, j.salary]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+    const sorted = [...list].sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "company") cmp = a.company.localeCompare(b.company, "ja");
+      else if (sortKey === "salary") cmp = a.salaryValue - b.salaryValue;
+      else cmp = (a.postedAt ?? "").localeCompare(b.postedAt ?? "");
+      return cmp * sortDir;
+    });
+    return sorted;
+  }, [jobs, filter, query, sortKey, sortDir]);
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         <FilterPill
           active={filter === "all"}
           onClick={() => setFilter("all")}
@@ -508,10 +586,53 @@ function JobsTab() {
         <div className="flex-1" />
         <button
           onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] font-extrabold shadow-md"
+          className="inline-flex items-center gap-1.5 px-4 h-9 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-400 text-white text-[12px] font-extrabold shadow-md hover:shadow-lg active:scale-[0.98] transition"
         >
           + 新規作成
         </button>
+      </div>
+
+      {/* Search + result count */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="relative flex-1 min-w-[220px] max-w-md">
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" />
+          </svg>
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setQuery("");
+                e.currentTarget.blur();
+              }
+            }}
+            placeholder="会社・タイトル・勤務地・IDで検索（ / でフォーカス）"
+            className="w-full h-9 pl-9 pr-8 rounded-xl bg-white border border-gray-200 text-[12px] text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 [&::-webkit-search-cancel-button]:hidden"
+          />
+          {query && (
+            <button
+              onClick={() => setQuery("")}
+              aria-label="検索をクリア"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <span className="text-[11px] text-gray-400 font-bold tabular-nums">
+          {visible.length}件{query || filter !== "all" ? ` / 全${jobs.length}件` : ""}
+        </span>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
@@ -519,20 +640,40 @@ function JobsTab() {
           <table className="w-full text-[12px]">
             <thead className="bg-gray-50 text-gray-500">
               <tr>
-                <Th>会社</Th>
+                <SortableTh
+                  label="会社"
+                  active={sortKey === "company"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("company")}
+                />
                 <Th>タイトル</Th>
                 <Th>種別</Th>
-                <Th>給与</Th>
+                <SortableTh
+                  label="給与"
+                  active={sortKey === "salary"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("salary")}
+                />
                 <Th>勤務地</Th>
                 <Th>状態</Th>
-                <Th>掲載日</Th>
+                <SortableTh
+                  label="掲載日"
+                  active={sortKey === "posted"}
+                  dir={sortDir}
+                  onClick={() => toggleSort("posted")}
+                />
                 <Th>ID</Th>
                 <Th>操作</Th>
               </tr>
             </thead>
             <tbody>
               {visible.map((job) => (
-                <tr key={job.id} className="border-t border-gray-50 hover:bg-gray-50/40">
+                <tr
+                  key={job.id}
+                  onClick={() => setEditing(job)}
+                  title="クリックで編集"
+                  className="border-t border-gray-50 hover:bg-blue-50/30 cursor-pointer transition-colors"
+                >
                   <Td className="font-bold text-gray-900">
                     <div className="line-clamp-1 max-w-[200px]">{job.company}</div>
                   </Td>
@@ -559,34 +700,40 @@ function JobsTab() {
                       ? new Date(job.postedAt).toLocaleDateString("ja-JP")
                       : "—"}
                   </Td>
-                  <Td className="font-mono text-[10px] text-gray-400">{job.id}</Td>
-                  <Td>
-                    <div className="flex gap-1">
+                  <Td className="font-mono text-[10px] text-gray-400 whitespace-nowrap">
+                    {job.id}
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    <div
+                      className="flex gap-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <a
                         href={`/job/${job.id}/`}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 text-[11px] font-bold hover:bg-gray-100"
+                        className="px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 text-[11px] font-bold hover:bg-gray-100 whitespace-nowrap"
                       >
                         表示
                       </a>
                       <button
                         onClick={() => setEditing(job)}
-                        className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100"
+                        className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100 whitespace-nowrap"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => {
-                          if (!confirm(`「${job.title}」を削除しますか？`)) return;
+                          if (!confirm(`「${job.title}」を削除しますか？\n（あとで復元できます）`)) return;
                           if (isJobAdminCreated(job.id)) {
                             deleteAdminJob(job.id);
                           } else {
                             deleteJob(job.id);
                           }
                           refresh();
+                          toast.show(`「${job.title}」を削除しました（下部から復元できます）`, "success");
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100"
+                        className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100 whitespace-nowrap"
                       >
                         削除
                       </button>
@@ -596,8 +743,23 @@ function JobsTab() {
               ))}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="text-center text-gray-400 py-10 text-[12px]">
-                    対象がありません
+                  <td colSpan={9} className="text-center py-12">
+                    <p className="text-gray-400 text-[12px] mb-2">
+                      {query
+                        ? `「${query}」に一致する求人がありません`
+                        : "対象がありません"}
+                    </p>
+                    {(query || filter !== "all") && (
+                      <button
+                        onClick={() => {
+                          setQuery("");
+                          setFilter("all");
+                        }}
+                        className="text-[11px] font-bold text-blue-500 hover:underline"
+                      >
+                        検索・絞り込みをクリア
+                      </button>
+                    )}
                   </td>
                 </tr>
               )}
@@ -606,8 +768,8 @@ function JobsTab() {
         </div>
       </div>
 
-      {/* Soft-deleted list */}
-      <DeletedJobsPanel onRestore={refresh} />
+      {/* Soft-deleted list — shares `bump` so a delete above shows up here immediately */}
+      <DeletedJobsPanel bump={bump} onRestore={refresh} />
 
       {editing && (
         <JobEditModal
@@ -617,6 +779,7 @@ function JobsTab() {
             updateJob(editing.id, patch);
             setEditing(null);
             refresh();
+            toast.show("変更を保存しました", "success");
           }}
         />
       )}
@@ -628,6 +791,7 @@ function JobsTab() {
             createJob(j);
             setCreating(false);
             refresh();
+            toast.show(`「${j.title}」を作成しました`, "success");
           }}
         />
       )}
@@ -635,9 +799,16 @@ function JobsTab() {
   );
 }
 
-function DeletedJobsPanel({ onRestore }: { onRestore: () => void }) {
-  const [bump, setBump] = useState(0);
-  // Recompute when `bump` changes after a restore.
+function DeletedJobsPanel({
+  bump,
+  onRestore,
+}: {
+  bump: number;
+  onRestore: () => void;
+}) {
+  const toast = useToast();
+  // Recompute whenever the parent's `bump` ticks (delete OR restore) so a
+  // just-deleted job appears here immediately.
   const allIds = useMemo(() => {
     if (typeof window === "undefined") return [] as string[];
     const merged = new Set(getMergedJobs().map((j) => j.id));
@@ -664,8 +835,8 @@ function DeletedJobsPanel({ onRestore }: { onRestore: () => void }) {
             key={id}
             onClick={() => {
               restoreJob(id);
-              setBump((b) => b + 1);
               onRestore();
+              toast.show(`${id} を復元しました`, "success");
             }}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white border border-rose-200 text-rose-600 text-[11px] font-bold hover:bg-rose-100"
           >
@@ -1323,11 +1494,11 @@ function ApplicationsTab() {
                         ))}
                       </select>
                     </Td>
-                    <Td>
+                    <Td className="whitespace-nowrap">
                       <div className="flex gap-1">
                         <button
                           onClick={() => setDetail(app)}
-                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100"
+                          className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 text-[11px] font-bold hover:bg-blue-100 whitespace-nowrap"
                         >
                           詳細
                         </button>
@@ -1337,7 +1508,7 @@ function ApplicationsTab() {
                             await adminDeleteApplication(app.id);
                             setBump((b) => b + 1);
                           }}
-                          className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100"
+                          className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-bold hover:bg-rose-100 whitespace-nowrap"
                         >
                           削除
                         </button>
@@ -1348,8 +1519,11 @@ function ApplicationsTab() {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-gray-400 py-10 text-[12px]">
-                    対象の応募がありません
+                  <td colSpan={5} className="text-center py-12">
+                    <p className="text-gray-400 text-[12px]">対象の応募がありません</p>
+                    <p className="text-gray-300 text-[11px] mt-1.5">
+                      ユーザーがサイト側で応募すると、ここに表示されます
+                    </p>
                   </td>
                 </tr>
               )}
@@ -1583,7 +1757,10 @@ function LeadsTab() {
       </div>
 
       {leads.length === 0 ? (
-        <EmptyPanel text="まだリードがありません。/business のフォームから問い合わせがあるとここに表示されます。" />
+        <EmptyPanel
+          text="まだリードがありません"
+          hint="/business のお問い合わせフォームから送信があると、ここに表示されます。"
+        />
       ) : visible.length === 0 ? (
         <EmptyPanel text="このステータスのリードはありません" />
       ) : (
@@ -1713,7 +1890,10 @@ function UsersTab() {
         ローカルに登録されたアカウント。Firebase Auth を有効にしている場合はここには表示されません。
       </p>
       {accounts.length === 0 ? (
-        <EmptyPanel text="登録ユーザーがいません" />
+        <EmptyPanel
+          text="登録ユーザーがいません"
+          hint="ユーザーがサイト側（/signup）で会員登録すると、ここに表示されます。"
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
           <table className="w-full text-[12px]">
@@ -1910,7 +2090,10 @@ function NotificationsTab() {
       </div>
 
       {items.length === 0 ? (
-        <EmptyPanel text="通知がありません" />
+        <EmptyPanel
+          text="通知がありません"
+          hint="「+ 新規作成」から、全ユーザーへのお知らせを配信できます。"
+        />
       ) : (
         <div className="space-y-2">
           {items.map((n) => (
@@ -2772,6 +2955,36 @@ function Th({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Click-to-sort column header with an active-direction indicator. */
+function SortableTh({
+  label,
+  active,
+  dir,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  dir: 1 | -1;
+  onClick: () => void;
+}) {
+  return (
+    <th className="text-left px-2 py-1.5">
+      <button
+        onClick={onClick}
+        aria-label={`${label}で並び替え`}
+        className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg font-bold text-[10px] tracking-wider uppercase transition ${
+          active ? "bg-blue-50 text-blue-600" : "text-gray-500 hover:bg-gray-100"
+        }`}
+      >
+        {label}
+        <span className={`text-[8px] ${active ? "opacity-100" : "opacity-30"}`} aria-hidden="true">
+          {active ? (dir === -1 ? "▼" : "▲") : "▲▼"}
+        </span>
+      </button>
+    </th>
+  );
+}
+
 function Td({
   children,
   className = "",
@@ -2816,10 +3029,19 @@ function Tag({
   );
 }
 
-function EmptyPanel({ text }: { text: string }) {
+function EmptyPanel({ text, hint }: { text: string; hint?: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center text-gray-400 text-[12px]">
-      {text}
+    <div className="bg-white rounded-2xl border border-gray-100 py-14 px-6 text-center">
+      <div className="w-10 h-10 mx-auto mb-3 rounded-2xl bg-gray-50 text-gray-300 flex items-center justify-center">
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V7a2 2 0 00-2-2h-4l-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-2" />
+          <path strokeLinecap="round" d="M4 13h4l2 2h4l2-2h4" />
+        </svg>
+      </div>
+      <p className="text-gray-500 text-[13px] font-bold">{text}</p>
+      {hint && (
+        <p className="text-gray-400 text-[11px] mt-1.5 leading-relaxed">{hint}</p>
+      )}
     </div>
   );
 }
@@ -2833,8 +3055,22 @@ function ModalShell({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  // Esc closes the dialog — table-stakes for a console operators use all day.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
