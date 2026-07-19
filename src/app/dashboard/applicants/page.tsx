@@ -6,7 +6,19 @@ import {
   getApplicants,
   type Applicant,
   type ApplicantStage,
+  type SwiplyRecord,
 } from "@/lib/services/companyDemo";
+
+/** Reliability tier from a 0-100 score. */
+function reliabilityTier(score: number) {
+  if (score >= 85)
+    return { label: "高信頼", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", bar: "from-emerald-500 to-teal-400", dot: "bg-emerald-500" };
+  if (score >= 70)
+    return { label: "良好", cls: "bg-blue-50 text-blue-600 border-blue-200", bar: "from-blue-500 to-cyan-400", dot: "bg-blue-500" };
+  if (score >= 50)
+    return { label: "要注意", cls: "bg-amber-50 text-amber-700 border-amber-200", bar: "from-amber-500 to-orange-400", dot: "bg-amber-500" };
+  return { label: "リスク高", cls: "bg-rose-50 text-rose-600 border-rose-200", bar: "from-rose-500 to-red-400", dot: "bg-rose-500" };
+}
 
 const STAGE_META: Record<
   ApplicantStage,
@@ -135,9 +147,7 @@ export default function DashboardApplicantsPage() {
                     </div>
                     <div className="hidden sm:flex flex-col items-end gap-1 shrink-0">
                       <MatchScore score={a.matchRate} />
-                      <span className="text-[10px] text-gray-400">
-                        {new Date(a.appliedAt).toLocaleDateString("ja-JP")}
-                      </span>
+                      <ReliabilityChip record={a.swiplyRecord} />
                     </div>
                   </button>
                 ))}
@@ -270,6 +280,115 @@ function MatchScore({ score }: { score: number }) {
   );
 }
 
+/** Compact reliability chip for the list rows (only shown when noteworthy). */
+function ReliabilityChip({ record }: { record: SwiplyRecord }) {
+  const tier = reliabilityTier(record.reliabilityScore);
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${tier.cls}`}
+      title={`SWIPLY 信頼スコア ${record.reliabilityScore}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${tier.dot}`} />
+      信頼 {record.reliabilityScore}
+    </span>
+  );
+}
+
+/**
+ * The company-facing reliability panel: SWIPLY-internal track record so a
+ * hiring company can judge no-show risk and stickiness before investing.
+ */
+function SwiplyRecordPanel({ record }: { record: SwiplyRecord }) {
+  const tier = reliabilityTier(record.reliabilityScore);
+  const attendTotal = record.interviewsAttended + record.noShows;
+  const attendRate =
+    attendTotal > 0
+      ? Math.round((record.interviewsAttended / attendTotal) * 100)
+      : null;
+  // Pure: parsing a fixed ISO string is deterministic (unlike Date.now()).
+  const memberLabel = new Date(record.memberSince).toLocaleDateString("ja-JP", {
+    year: "numeric",
+    month: "numeric",
+  });
+
+  const stats: { label: string; value: string; warn?: boolean }[] = [
+    { label: "応募", value: `${record.applications}件` },
+    { label: "面接出席", value: `${record.interviewsAttended}回` },
+    { label: "ブッチ", value: `${record.noShows}回`, warn: record.noShows > 0 },
+    { label: "過去採用", value: `${record.hiredBefore}回` },
+    {
+      label: "平均在籍",
+      value: record.avgTenureMonths != null ? `${record.avgTenureMonths}ヶ月` : "—",
+    },
+    { label: "登録", value: memberLabel },
+  ];
+
+  return (
+    <div className="rounded-xl border border-gray-100 overflow-hidden">
+      <div className="flex items-center justify-between px-3 py-2 bg-gray-50/70 border-b border-gray-100">
+        <span className="text-[10px] font-bold text-gray-500 tracking-wide">
+          SWIPLY 実績・信頼スコア
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${tier.cls}`}>
+          {tier.label}
+        </span>
+      </div>
+
+      <div className="p-3 space-y-3">
+        {/* Score */}
+        <div>
+          <div className="flex items-end justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-gray-500">信頼スコア</span>
+            <span className="text-[20px] font-black tabular-nums text-gray-900 leading-none">
+              {record.reliabilityScore}
+              <span className="text-[11px] text-gray-400 font-bold"> / 100</span>
+            </span>
+          </div>
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className={`h-full rounded-full bg-gradient-to-r ${tier.bar} transition-all duration-700`}
+              style={{ width: `${record.reliabilityScore}%` }}
+            />
+          </div>
+          {attendRate != null && (
+            <p className="text-[10px] text-gray-400 mt-1.5">
+              面接出席率 <span className="font-bold text-gray-600">{attendRate}%</span>
+              （{record.interviewsAttended}/{attendTotal}）
+            </p>
+          )}
+        </div>
+
+        {/* Stat grid */}
+        <div className="grid grid-cols-3 gap-2">
+          {stats.map((s) => (
+            <div
+              key={s.label}
+              className={`rounded-lg px-2 py-1.5 border ${
+                s.warn ? "bg-amber-50 border-amber-200" : "bg-gray-50/70 border-gray-100"
+              }`}
+            >
+              <p className="text-[9px] text-gray-400 font-bold">{s.label}</p>
+              <p className={`text-[13px] font-black tabular-nums ${s.warn ? "text-amber-700" : "text-gray-900"}`}>
+                {s.value}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {record.noShows > 0 ? (
+          <p className="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-1.5 leading-relaxed">
+            ⚠ 過去に無断キャンセル歴あり。面接設定時はリマインドを推奨します。
+          </p>
+        ) : (
+          <p className="text-[10px] text-gray-400 leading-relaxed">
+            SWIPLY 内の行動履歴にもとづく信頼指標です。ブッチが少なく、定着している候補者ほど高くなります。
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DemoBanner() {
   return (
     <div className="mb-5 relative overflow-hidden bg-gradient-to-r from-blue-600 to-cyan-500 rounded-2xl px-4 py-3 flex items-center justify-between gap-3">
@@ -355,12 +474,8 @@ function ApplicantDetail({ applicant }: { applicant: Applicant }) {
         <p className="text-[13px] text-gray-700 leading-relaxed">{applicant.selfIntro}</p>
       </div>
 
-      {/* No-show */}
-      {applicant.noShowCount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-[11px] text-amber-800">
-          <span className="font-bold">⚠ ブッチ歴 {applicant.noShowCount}回</span>
-        </div>
-      )}
+      {/* SWIPLY track record — the「その前のデータが見れる」reliability signal */}
+      <SwiplyRecordPanel record={applicant.swiplyRecord} />
 
       {/* Actions */}
       <div className="grid grid-cols-2 gap-2 pt-2">

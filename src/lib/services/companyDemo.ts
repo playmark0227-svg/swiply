@@ -129,6 +129,32 @@ export type ApplicantStage =
   | "rejected"   // Company declined
   | "withdrawn"; // Candidate withdrew
 
+/**
+ * A candidate's cross-company track record *inside SWIPLY* — the signal a
+ * hiring company can see before committing. This is the「その前のデータが
+ * 見れる」ask from the タイミー review: ghost (無断キャンセル) rate and
+ * whether past hires stuck around, so a company can avoid serial no-shows
+ * and weight for candidates who actually stay. Reliability is intentionally
+ * SWIPLY-internal behaviour only (never external employers), which keeps it
+ * privacy-clean.
+ */
+export interface SwiplyRecord {
+  /** 0-100 信頼スコア — high = attends interviews + stays in jobs. */
+  reliabilityScore: number;
+  /** 累計応募数（SWIPLY内）. */
+  applications: number;
+  /** 面接に実際に出席した回数. */
+  interviewsAttended: number;
+  /** ブッチ（無断キャンセル / no-show）回数. */
+  noShows: number;
+  /** 過去に SWIPLY 経由で採用された回数. */
+  hiredBefore: number;
+  /** 過去採用の平均在籍月数（履歴が無ければ null）. */
+  avgTenureMonths: number | null;
+  /** SWIPLY 登録日（ISO）. */
+  memberSince: string;
+}
+
 export interface Applicant {
   id: string;
   name: string;
@@ -145,7 +171,13 @@ export interface Applicant {
   noShowCount: number;
   lastMessageAt?: string;
   interviewAt?: string;
+  /** Cross-company reliability record shown to the hiring company. */
+  swiplyRecord: SwiplyRecord;
 }
+
+/** Helper: months-ago ISO for `memberSince`. */
+const MONTHS_AGO = (m: number) =>
+  new Date(Date.now() - m * 30 * 86_400_000).toISOString();
 
 export function getApplicants(): Applicant[] {
   return [
@@ -165,6 +197,7 @@ export function getApplicants(): Applicant[] {
       noShowCount: 0,
       lastMessageAt: ISO(0.1),
       interviewAt: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      swiplyRecord: { reliabilityScore: 94, applications: 3, interviewsAttended: 2, noShows: 0, hiredBefore: 1, avgTenureMonths: 14, memberSince: MONTHS_AGO(16) },
     },
     {
       id: "ap-2",
@@ -181,6 +214,7 @@ export function getApplicants(): Applicant[] {
       matchRate: 78,
       noShowCount: 0,
       lastMessageAt: ISO(1),
+      swiplyRecord: { reliabilityScore: 80, applications: 2, interviewsAttended: 1, noShows: 0, hiredBefore: 0, avgTenureMonths: null, memberSince: MONTHS_AGO(4) },
     },
     {
       id: "ap-3",
@@ -196,6 +230,7 @@ export function getApplicants(): Applicant[] {
       selfIntro: "メンズカットが得意ですが、最近はレディースのデザインカラーにも力を入れています。",
       matchRate: 88,
       noShowCount: 0,
+      swiplyRecord: { reliabilityScore: 90, applications: 4, interviewsAttended: 3, noShows: 0, hiredBefore: 1, avgTenureMonths: 22, memberSince: MONTHS_AGO(20) },
     },
     {
       id: "ap-4",
@@ -212,6 +247,7 @@ export function getApplicants(): Applicant[] {
       matchRate: 85,
       noShowCount: 0,
       lastMessageAt: ISO(0.5),
+      swiplyRecord: { reliabilityScore: 85, applications: 2, interviewsAttended: 2, noShows: 0, hiredBefore: 0, avgTenureMonths: 8, memberSince: MONTHS_AGO(10) },
     },
     {
       id: "ap-5",
@@ -227,6 +263,7 @@ export function getApplicants(): Applicant[] {
       selfIntro: "メンズ特化でやってきましたが、幅広いスタイルに挑戦したいと思い転職を考えています。",
       matchRate: 90,
       noShowCount: 0,
+      swiplyRecord: { reliabilityScore: 88, applications: 3, interviewsAttended: 2, noShows: 0, hiredBefore: 1, avgTenureMonths: 16, memberSince: MONTHS_AGO(18) },
     },
     {
       id: "ap-6",
@@ -242,6 +279,7 @@ export function getApplicants(): Applicant[] {
       selfIntro: "まだ学校に通っていますが、卒業後すぐに働きたいと思っています。",
       matchRate: 45,
       noShowCount: 1,
+      swiplyRecord: { reliabilityScore: 52, applications: 5, interviewsAttended: 2, noShows: 1, hiredBefore: 0, avgTenureMonths: 3, memberSince: MONTHS_AGO(9) },
     },
     {
       id: "ap-7",
@@ -258,6 +296,7 @@ export function getApplicants(): Applicant[] {
       matchRate: 96,
       noShowCount: 0,
       lastMessageAt: ISO(2),
+      swiplyRecord: { reliabilityScore: 97, applications: 2, interviewsAttended: 2, noShows: 0, hiredBefore: 1, avgTenureMonths: 30, memberSince: MONTHS_AGO(30) },
     },
     {
       id: "ap-8",
@@ -273,6 +312,7 @@ export function getApplicants(): Applicant[] {
       selfIntro: "美容に興味があります。将来はサロン運営にも関わりたいです。",
       matchRate: 72,
       noShowCount: 0,
+      swiplyRecord: { reliabilityScore: 78, applications: 1, interviewsAttended: 0, noShows: 0, hiredBefore: 0, avgTenureMonths: null, memberSince: MONTHS_AGO(2) },
     },
   ];
 }
